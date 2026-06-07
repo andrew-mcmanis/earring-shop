@@ -34,7 +34,7 @@ export function ShopContent() {
       <div className="lg:hidden flex items-center justify-between">
         <button
           onClick={() => setMobileFiltersOpen((o) => !o)}
-          className="cursor-pointer flex items-center gap-2 bg-cream-dark border border-kraft-light text-ink font-body text-sm font-medium px-4 py-2.5 rounded-full hover:border-kraft transition-colors duration-150"
+          className="cursor-pointer flex items-center gap-2 bg-cream-dark border border-kraft-light text-ink font-body text-sm font-medium px-4 py-2.5 rounded hover:border-kraft transition-colors duration-150"
           aria-expanded={mobileFiltersOpen}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">

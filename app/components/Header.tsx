@@ -66,7 +66,7 @@ export function Header() {
             <div className="flex items-center gap-3">
               {/* Cart */}
               <button
-                className="relative cursor-pointer text-ink hover:text-kraft transition-colors duration-200 p-2 rounded-lg hover:bg-cream-dark"
+                className="relative cursor-pointer text-ink hover:text-kraft transition-colors duration-200 p-2 rounded hover:bg-cream-dark"
                 aria-label="Shopping cart, 0 items"
               >
                 <svg
@@ -91,7 +91,7 @@ export function Header() {
 
               {/* Mobile hamburger */}
               <button
-                className="md:hidden cursor-pointer text-ink hover:text-kraft transition-colors duration-200 p-2 rounded-lg hover:bg-cream-dark"
+                className="md:hidden cursor-pointer text-ink hover:text-kraft transition-colors duration-200 p-2 rounded hover:bg-cream-dark"
                 onClick={() => setMobileOpen((o) => !o)}
                 aria-expanded={mobileOpen}
                 aria-controls="mobile-menu"

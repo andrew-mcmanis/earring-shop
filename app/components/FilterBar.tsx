@@ -46,7 +46,7 @@ export function FilterBar({
 
   return (
     <aside className="w-full lg:w-52 flex-shrink-0" aria-label="Product filters">
-      <div className="bg-cream-dark rounded-2xl p-5 flex flex-col gap-6 lg:sticky lg:top-28">
+      <div className="bg-cream-dark rounded-lg p-5 flex flex-col gap-6 lg:sticky lg:top-32">
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-2xl font-bold text-ink">Filter</h2>
           <div className="flex items-center gap-3">
@@ -56,7 +56,7 @@ export function FilterBar({
             {onMobileClose && (
               <button
                 onClick={onMobileClose}
-                className="lg:hidden cursor-pointer font-body text-xs font-semibold text-cream bg-kraft px-3 py-1.5 rounded-full hover:bg-kraft-dark transition-colors duration-150"
+                className="lg:hidden cursor-pointer font-body text-xs font-semibold text-cream bg-kraft px-3 py-1.5 rounded hover:bg-kraft-dark transition-colors duration-150"
               >
                 Done
               </button>
@@ -72,7 +72,7 @@ export function FilterBar({
                 key={t.value}
                 onClick={() => onTypeChange(t.value)}
                 aria-pressed={selectedType === t.value}
-                className={`cursor-pointer text-left font-body text-sm px-3 py-2 rounded-xl transition-colors duration-150 ${
+                className={`cursor-pointer text-left font-body text-sm px-3 py-2 rounded transition-colors duration-150 ${
                   selectedType === t.value
                     ? 'bg-kraft text-cream font-semibold'
                     : 'text-ink hover:bg-kraft-light/40'
@@ -92,7 +92,7 @@ export function FilterBar({
                 key={m.value}
                 onClick={() => onMetalChange(m.value)}
                 aria-pressed={selectedMetal === m.value}
-                className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded-full border transition-colors duration-150 ${
+                className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded border transition-colors duration-150 ${
                   selectedMetal === m.value
                     ? 'bg-kraft border-kraft text-cream font-semibold'
                     : 'border-kraft-light text-ink hover:border-kraft'
@@ -116,7 +116,7 @@ export function FilterBar({
                     key="all"
                     onClick={() => onColourChange('all')}
                     aria-pressed={isActive}
-                    className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded-full border transition-colors duration-150 ${
+                    className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded border transition-colors duration-150 ${
                       isActive
                         ? 'bg-kraft border-kraft text-cream font-semibold'
                         : 'border-kraft-light text-ink hover:border-kraft'
