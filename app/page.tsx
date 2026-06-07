@@ -6,16 +6,14 @@ export default function Home() {
     <>
       <Header />
 
-      <section className="bg-ink text-cream py-14 px-4 text-center">
-        <p className="font-body text-xs font-semibold tracking-[0.3em] uppercase text-kraft-light mb-3">
-          Handcrafted with Love
-        </p>
-        <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold mb-4 leading-tight">
-          Unique Earrings for Every Style
+      <section className="bg-ink text-cream py-16 px-4 text-center">
+        <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold mb-4 leading-[1.05]">
+          Handmade earrings,
+          <br className="hidden sm:block" /> made just for you
         </h1>
-        <p className="font-body text-sm text-cream/70 max-w-sm mx-auto leading-relaxed">
-          Each piece is made to order. Browse our handcrafted collection in gold, silver, brass, and
-          more.
+        <p className="font-body text-base text-kraft-light max-w-md mx-auto leading-relaxed">
+          Every pair is crafted to order in gold, silver, brass and more — so no two are
+          ever quite the same.
         </p>
       </section>
 
