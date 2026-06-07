@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Earring } from '../data/earrings';
 import { EarringIcon } from './EarringIcon';
+import { AddToCartButton } from './AddToCartButton';
 
 interface ProductCardProps {
   earring: Earring;
@@ -44,12 +45,7 @@ export function ProductCard({ earring }: ProductCardProps) {
           <span className="font-body text-lg font-semibold text-ink tabular-nums">
             ${earring.price.toFixed(2)}
           </span>
-          <button
-            className="cursor-pointer bg-kraft text-cream font-body text-sm font-medium px-4 py-2 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2"
-            aria-label={`Add ${earring.name} to cart`}
-          >
-            Add to Cart
-          </button>
+          <AddToCartButton earring={earring} />
         </div>
       </div>
     </article>

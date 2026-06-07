@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Header } from '../../components/Header';
 import { EarringIcon } from '../../components/EarringIcon';
+import { AddToCartButton } from '../../components/AddToCartButton';
 import { earrings } from '../../data/earrings';
 
 interface ProductPageProps {
@@ -98,12 +99,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </dl>
 
             <div className="flex items-center gap-4 mt-4">
-              <button
-                className="cursor-pointer bg-kraft text-cream font-body text-sm font-medium px-6 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2"
-                aria-label={`Add ${earring.name} to cart`}
-              >
-                Add to Cart
-              </button>
+              <AddToCartButton earring={earring} size="lg" />
               <p className="font-body text-xs text-ink-light">
                 Made to order · Ships within 5–7 business days
               </p>

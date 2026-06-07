@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Amatic_SC, Cabin } from 'next/font/google';
 import './globals.css';
+import { CartProvider } from './components/CartProvider';
+import { CartDrawer } from './components/CartDrawer';
 
 const amaticSC = Amatic_SC({
   weight: ['400', '700'],
@@ -32,7 +34,12 @@ export default function RootLayout({
       lang="en"
       className={`${amaticSC.variable} ${cabin.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream text-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-cream text-ink">
+        <CartProvider>
+          {children}
+          <CartDrawer />
+        </CartProvider>
+      </body>
     </html>
   );
 }
