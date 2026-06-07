@@ -1,41 +1,19 @@
+import Link from 'next/link';
 import type { Earring } from '../data/earrings';
+import { EarringIcon } from './EarringIcon';
 
 interface ProductCardProps {
   earring: Earring;
 }
 
-function EarringIcon({ color }: { color: string }) {
-  return (
-    <svg
-      viewBox="0 0 60 90"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-16 h-24"
-      aria-hidden="true"
-    >
-      {/* Ear wire hook */}
-      <path
-        d="M30 6 Q44 6 44 18 Q44 30 30 30"
-        stroke={color}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-      {/* Stem */}
-      <line x1="30" y1="30" x2="30" y2="56" stroke={color} strokeWidth="2" strokeLinecap="round" />
-      {/* Drop */}
-      <ellipse cx="30" cy="72" rx="13" ry="15" stroke={color} strokeWidth="2" fill={color} fillOpacity="0.2" />
-    </svg>
-  );
-}
-
 export function ProductCard({ earring }: ProductCardProps) {
   return (
-    <article className="group relative flex flex-col bg-white rounded-lg overflow-hidden border border-cream-dark hover:border-kraft transition-all duration-200 hover:shadow-sm cursor-pointer">
-      {/* Image placeholder — replace with next/image when product photos are ready */}
-      <div
-        className="relative aspect-square w-full overflow-hidden flex items-center justify-center"
+    <article className="group relative flex flex-col bg-white rounded-lg overflow-hidden border border-cream-dark hover:border-kraft transition-all duration-200 hover:shadow-sm">
+      <Link
+        href={`/product/${earring.id}`}
+        className="relative aspect-square w-full overflow-hidden flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft focus-visible:ring-offset-2"
         style={{ backgroundColor: `${earring.accentColor}12` }}
+        aria-label={`View details for ${earring.name}`}
       >
         <div className="transition-transform duration-300 group-hover:scale-105">
           <EarringIcon color={earring.accentColor} />
@@ -44,11 +22,16 @@ export function ProductCard({ earring }: ProductCardProps) {
         <span className="absolute top-3 left-3 bg-cream text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-cream-dark">
           {earring.type}
         </span>
-      </div>
+      </Link>
 
       <div className="flex flex-col gap-1 p-4 border-t border-cream-dark">
         <h3 className="font-heading text-2xl font-bold text-ink leading-tight">
-          {earring.name}
+          <Link
+            href={`/product/${earring.id}`}
+            className="hover:text-kraft transition-colors duration-150 focus:outline-none focus-visible:underline"
+          >
+            {earring.name}
+          </Link>
         </h3>
         <p className="font-body text-xs text-ink-light capitalize tracking-wide">
           {earring.metal}
