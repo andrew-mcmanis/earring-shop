@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
 import { EarringIcon } from './EarringIcon';
@@ -153,11 +154,13 @@ export function CartDrawer() {
             <p className="font-body text-xs text-ink-light">
               Each pair is made to order. Shipping is arranged after checkout.
             </p>
-            <button
-              className="cursor-pointer bg-kraft text-cream font-body text-sm font-semibold px-5 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2"
+            <Link
+              href="/checkout"
+              onClick={closeCart}
+              className="text-center cursor-pointer bg-kraft text-cream font-body text-sm font-semibold px-5 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2"
             >
               Checkout
-            </button>
+            </Link>
             <button
               onClick={clear}
               className="cursor-pointer font-body text-xs text-ink-light hover:text-kraft underline underline-offset-2 transition-colors duration-150 self-center"
