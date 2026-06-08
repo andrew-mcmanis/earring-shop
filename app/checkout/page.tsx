@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Header } from '../components/Header';
+import { Footer } from '../components/Footer';
 import { CheckoutForm } from '../components/CheckoutForm';
 
 export const metadata: Metadata = {
@@ -30,11 +31,7 @@ export default function CheckoutPage() {
         <CheckoutForm />
       </div>
 
-      <footer className="mt-auto border-t border-cream-dark py-8 px-4 text-center">
-        <p className="font-body text-xs text-ink-light">
-          © {new Date().getFullYear()} BLG Creations · All rights reserved · Made with love
-        </p>
-      </footer>
+      <Footer />
     </>
   );
 }

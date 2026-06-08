@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 
 export default function NotFound() {
   return (
@@ -20,11 +21,7 @@ export default function NotFound() {
         </Link>
       </div>
 
-      <footer className="mt-auto border-t border-cream-dark py-8 px-4 text-center">
-        <p className="font-body text-xs text-ink-light">
-          © {new Date().getFullYear()} BLG Creations · All rights reserved · Made with love
-        </p>
-      </footer>
+      <Footer />
     </>
   );
 }

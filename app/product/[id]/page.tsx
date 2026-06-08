@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Header } from '../../components/Header';
+import { Footer } from '../../components/Footer';
 import { ProductImage } from '../../components/ProductImage';
 import { AddToCartButton } from '../../components/AddToCartButton';
 import {
@@ -194,11 +195,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         )}
       </div>
 
-      <footer className="mt-auto border-t border-cream-dark py-8 px-4 text-center">
-        <p className="font-body text-xs text-ink-light">
-          © {new Date().getFullYear()} BLG Creations · All rights reserved · Made with love
-        </p>
-      </footer>
+      <Footer />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { ShopContent } from './components/ShopContent';
 import { getProducts, getCategories, getSubcategories, getColours } from './data/products';
 
@@ -32,11 +33,7 @@ export default async function Home() {
         colours={colours}
       />
 
-      <footer className="mt-auto border-t border-cream-dark py-8 px-4 text-center">
-        <p className="font-body text-xs text-ink-light">
-          © {new Date().getFullYear()} BLG Creations · All rights reserved · Made with love
-        </p>
-      </footer>
+      <Footer />
     </>
   );
 }

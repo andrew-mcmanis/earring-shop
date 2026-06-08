@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Header } from '../../components/Header';
+import { Footer } from '../../components/Footer';
 
 export const metadata: Metadata = {
   title: 'Order received · BLG Creations',
@@ -46,11 +47,7 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
         </Link>
       </div>
 
-      <footer className="mt-auto border-t border-cream-dark py-8 px-4 text-center">
-        <p className="font-body text-xs text-ink-light">
-          © {new Date().getFullYear()} BLG Creations · All rights reserved · Made with love
-        </p>
-      </footer>
+      <Footer />
     </>
   );
 }
