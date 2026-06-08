@@ -104,9 +104,13 @@ Implications:
 
 These shape the admin design, so worth settling before building:
 
-- **Labels** — should she be able to *invent new* types/metals/colours herself,
-  or pick from a fixed set agreed up front? (Fixed = simpler & safer; custom =
-  more flexible but fiddlier, esp. colour swatches.)
+- _(Resolved)_ **Labels — data-driven / extensible.** Categories,
+  subcategories, and colours live in the DB and the owner can add new ones via
+  the admin (no code/redesign needed). Chosen to future-proof and avoid later
+  redesigns. Implications: a small "manage labels" capability in the admin;
+  colours need **name + swatch colour** to keep filter swatches working; light
+  guardrails so labels don't sprawl. Bonus: makes future product badges/tags
+  ("New", "Bestseller", seasonal) trivial to add.
 - _(Resolved)_ **Attributes** — Metal removed; Colour kept across all
   categories, optional per product. Still optional/low-priority: whether
   Bookmarks/Gifts want any bespoke attributes of their own later.
