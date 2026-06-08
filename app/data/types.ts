@@ -22,6 +22,33 @@ export interface Colour {
   hex: string;
 }
 
+export type OrderStatus = 'new' | 'made' | 'posted' | 'cancelled';
+
+export interface OrderItem {
+  id: string;
+  productId: string | null;
+  name: string;
+  unitPrice: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  address: string;
+  city: string | null;
+  postcode: string | null;
+  country: string;
+  notes: string | null;
+  subtotal: number;
+  status: OrderStatus;
+  createdAt: string;
+  items: OrderItem[];
+}
+
 export interface Product {
   id: string;
   name: string;

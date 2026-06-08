@@ -152,9 +152,12 @@ route protection, sign-in, and sign-out all work.
 
 **Phase 5 — Orders + Stripe payment.** _(Payment model confirmed 2026-06-08:
 pay-at-checkout via Stripe; orders shown in the shop's own admin — "option a".)_
-- Persist orders to Supabase (`orders` + `order_items`), Stripe-ready fields
-  (status pending/paid, stripe_session_id), and an **Orders page in the admin**
-  so the owner sees and fulfils them. _This part can be built now._
+- ✅ **Orders persistence + admin Orders view done.** Checkout saves the order
+  to Supabase (`orders` + `order_items`, snapshotting name/price) via the
+  service role, resilient if the DB is unavailable. `/admin/orders` lists orders
+  (newest first) with items, customer + delivery details, total, and a status
+  control (New → Made → Posted / Cancelled). Migration `0003_orders.sql` must be
+  run in Supabase to activate persistence.
 - **Stripe Checkout** (deferred — "cross when we need to"): the owner's **own
   Stripe account** (single merchant, not Connect); the shop creates a Checkout
   Session server-side → Stripe-hosted payment page → webhook marks the order

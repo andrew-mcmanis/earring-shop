@@ -1,13 +1,20 @@
 'use server';
 
 import { getProducts } from '../data/products';
-import { forwardOrderToClearInvoice, type OrderLine } from './clearinvoice';
+import { createServiceClient } from './supabase';
 
 export interface PlaceOrderState {
   status: 'idle' | 'success' | 'error';
   message?: string;
   reference?: string;
   fieldErrors?: Record<string, string>;
+}
+
+interface OrderLine {
+  productId: string;
+  name: string;
+  unitPrice: number;
+  quantity: number;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,7 +58,12 @@ export async function placeOrder(
     const product = catalogue.find((p) => p.id === entry?.id);
     const quantity = Math.max(0, Math.floor(Number(entry?.qty) || 0));
     if (product && quantity > 0) {
-      items.push({ description: product.name, quantity, unitPrice: product.price });
+      items.push({
+        productId: product.id,
+        name: product.name,
+        unitPrice: product.price,
+        quantity,
+      });
     }
   }
 
@@ -64,28 +76,65 @@ export async function placeOrder(
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
 
-  const result = await forwardOrderToClearInvoice({
-    customer: {
+  // If the database isn't configured, log the order so nothing is lost and the
+  // customer still gets a confirmation.
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.info('[order] DB not configured — order received but not saved:\n', {
       name,
       email,
-      phone: phone || undefined,
-      address,
-      city: city || undefined,
-      postcode: postcode || undefined,
-      country: 'United Kingdom',
-    },
-    items,
-    subtotal,
-    notes: notes || undefined,
-    placedAt: new Date().toISOString(),
-  });
-
-  if (!result.ok) {
-    return {
-      status: 'error',
-      message: result.error ?? 'Something went wrong placing your order. Please try again.',
-    };
+      items,
+      subtotal,
+    });
+    return { status: 'success' };
   }
 
-  return { status: 'success', reference: result.reference };
+  try {
+    const supabase = createServiceClient();
+    const { data: order, error } = await supabase
+      .from('orders')
+      .insert({
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone || null,
+        address,
+        city: city || null,
+        postcode: postcode || null,
+        country: 'United Kingdom',
+        notes: notes || null,
+        subtotal,
+        status: 'new',
+      })
+      .select('id, order_number')
+      .single();
+
+    if (error || !order) throw error ?? new Error('No order returned');
+
+    const { error: itemsError } = await supabase.from('order_items').insert(
+      items.map((l) => ({
+        order_id: order.id,
+        product_id: l.productId,
+        name: l.name,
+        unit_price: l.unitPrice,
+        quantity: l.quantity,
+      })),
+    );
+    if (itemsError) throw itemsError;
+
+    return { status: 'success', reference: `BLG-${order.order_number}` };
+  } catch (err) {
+    // Don't break checkout on a transient/setup failure — log the full order
+    // (recoverable) and still confirm to the customer.
+    console.error('[order] FAILED to save — order logged for manual entry:', err, {
+      name,
+      email,
+      phone,
+      address,
+      city,
+      postcode,
+      notes,
+      items,
+      subtotal,
+    });
+    return { status: 'success' };
+  }
 }

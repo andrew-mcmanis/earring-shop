@@ -16,7 +16,7 @@ const SECTIONS = [
     href: '/admin/orders',
     title: 'Orders',
     description: 'See incoming orders and mark them as made and posted.',
-    ready: false,
+    ready: true,
   },
   {
     href: '/admin/labels',
