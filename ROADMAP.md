@@ -136,8 +136,12 @@ route protection, sign-in, and sign-out all work.
   earring-type field, colour, show/hide). Writes use the signed-in user's
   session (RLS `authenticated`); the shop revalidates on save. Verified live
   (create → appears in admin + shop; delete removes it).
-- ⏳ **Image upload** (Phase 2 folded in): upload to the `product-images`
-  Storage bucket from the product form; render with `next/image`.
+- ✅ **Image upload done** (Phase 2 folded in): photo field on the product form
+  uploads to the `product-images` Storage bucket server-side (service role) and
+  sets `image_url`; real photos render via `next/image` across the shop, product
+  pages, admin list, cart and checkout, with the placeholder as fallback.
+  Verified: upload → public URL → renders; placeholder still shows when no
+  photo.
 - ⏳ **Labels management:** add/edit categories, subcategories, colours (name +
   swatch).
 

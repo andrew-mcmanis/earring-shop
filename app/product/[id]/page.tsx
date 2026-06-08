@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Header } from '../../components/Header';
-import { ProductIcon } from '../../components/ProductIcon';
+import { ProductImage } from '../../components/ProductImage';
 import { AddToCartButton } from '../../components/AddToCartButton';
 import {
   getProduct,
@@ -85,10 +85,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="flex flex-col lg:flex-row gap-10">
           {/* Image */}
           <div
-            className="w-full lg:w-1/2 aspect-square rounded-lg border border-cream-dark flex items-center justify-center flex-shrink-0"
+            className="relative overflow-hidden w-full lg:w-1/2 aspect-square rounded-lg border border-cream-dark flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${product.accentColor}12` }}
           >
-            <ProductIcon color={product.accentColor} category={product.categorySlug} className="w-40 h-60" />
+            <ProductImage
+              image={product.image}
+              accentColor={product.accentColor}
+              category={product.categorySlug}
+              alt={product.name}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              iconClassName="w-40 h-60"
+            />
           </div>
 
           {/* Details */}
@@ -163,9 +170,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     className="relative aspect-square w-full overflow-hidden flex items-center justify-center"
                     style={{ backgroundColor: `${item.accentColor}12` }}
                   >
-                    <div className="transition-transform duration-300 group-hover:scale-105">
-                      <ProductIcon color={item.accentColor} category={item.categorySlug} />
-                    </div>
+                    <ProductImage
+                      image={item.image}
+                      accentColor={item.accentColor}
+                      category={item.categorySlug}
+                      alt={item.name}
+                      sizes="(max-width: 1024px) 50vw, 33vw"
+                      iconClassName="w-16 h-24 transition-transform duration-300 group-hover:scale-105"
+                    />
                   </div>
                   <div className="flex flex-col gap-1 p-4 border-t border-cream-dark">
                     <h3 className="font-heading text-xl font-bold text-ink leading-tight">

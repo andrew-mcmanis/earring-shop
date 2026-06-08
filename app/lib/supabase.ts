@@ -21,3 +21,18 @@ export function createReadClient(): SupabaseClient {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+
+/**
+ * Privileged server-only client (service-role key). Bypasses RLS — use ONLY in
+ * server code (Server Actions / Route Handlers), e.g. for Storage uploads.
+ * Never import this into a Client Component.
+ */
+export function createServiceClient(): SupabaseClient {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    throw new Error('Supabase service role is not configured.');
+  }
+  return createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}

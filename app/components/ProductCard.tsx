@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Product, Colour } from '../data/types';
-import { ProductIcon } from './ProductIcon';
+import { ProductImage } from './ProductImage';
 import { AddToCartButton } from './AddToCartButton';
 
 interface ProductCardProps {
@@ -20,11 +20,16 @@ export function ProductCard({ product, badge, colour }: ProductCardProps) {
         style={{ backgroundColor: `${product.accentColor}12` }}
         aria-label={`View details for ${product.name}`}
       >
-        <div className="transition-transform duration-300 group-hover:scale-105">
-          <ProductIcon color={product.accentColor} category={product.categorySlug} />
-        </div>
+        <ProductImage
+          image={product.image}
+          accentColor={product.accentColor}
+          category={product.categorySlug}
+          alt={product.name}
+          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+          iconClassName="w-16 h-24 transition-transform duration-300 group-hover:scale-105"
+        />
 
-        <span className="absolute top-3 left-3 bg-cream text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-cream-dark">
+        <span className="absolute top-3 left-3 z-10 bg-cream text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-cream-dark">
           {badge}
         </span>
       </Link>

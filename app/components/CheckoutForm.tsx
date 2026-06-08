@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useActionState, useEffect } from 'react';
 import { useCart } from './CartProvider';
 import { ProductIcon } from './ProductIcon';
+import { ProductImage } from './ProductImage';
 import { placeOrder, type PlaceOrderState } from '../lib/orders';
 
 const initialState: PlaceOrderState = { status: 'idle' };
@@ -163,10 +164,17 @@ export function CheckoutForm() {
             {items.map((item) => (
               <li key={item.id} className="flex items-center gap-3 py-3 first:pt-0">
                 <div
-                  className="w-12 h-12 rounded border border-kraft-light flex items-center justify-center flex-shrink-0"
+                  className="relative overflow-hidden w-12 h-12 rounded border border-kraft-light flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${item.accentColor}12` }}
                 >
-                  <ProductIcon color={item.accentColor} category={item.categorySlug} className="w-5 h-7" />
+                  <ProductImage
+                    image={item.image}
+                    accentColor={item.accentColor}
+                    category={item.categorySlug}
+                    alt={item.name}
+                    sizes="48px"
+                    iconClassName="w-5 h-7"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-medium text-ink leading-tight">{item.name}</p>

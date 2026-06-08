@@ -29,6 +29,7 @@ export function AddToCartButton({ product, size = 'sm', className = '' }: AddToC
       price: product.price,
       accentColor: product.accentColor,
       categorySlug: product.categorySlug,
+      image: product.image,
     });
     setAdded(true);
     if (timer.current) clearTimeout(timer.current);

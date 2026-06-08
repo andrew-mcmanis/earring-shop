@@ -90,6 +90,39 @@ export function ProductForm({
       </div>
 
       <div className="flex flex-col gap-1.5">
+        <span className="font-body text-sm font-medium text-ink">Photo</span>
+        {product?.image && (
+          <div className="flex items-center gap-3 mb-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={product.image}
+              alt={`Current photo of ${product.name}`}
+              className="w-20 h-20 object-cover rounded border border-cream-dark"
+            />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="remove_image" className="h-4 w-4 accent-kraft cursor-pointer" />
+              <span className="font-body text-xs text-ink-light">Remove current photo</span>
+            </label>
+          </div>
+        )}
+        <input
+          id="image"
+          name="image"
+          type="file"
+          accept="image/*"
+          aria-invalid={errs.image ? true : undefined}
+          className="font-body text-sm text-ink file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-cream-dark file:px-3 file:py-2 file:text-ink file:font-medium hover:file:bg-kraft-light"
+        />
+        <p className="font-body text-xs text-ink-light">
+          {product?.image
+            ? 'Upload a new photo to replace the current one.'
+            : 'JPG or PNG, up to 8MB. A placeholder shows until you add one.'}
+        </p>
+        <FieldError id="image" error={errs.image} />
+      </div>
+      <input type="hidden" name="current_image" value={product?.image ?? ''} />
+
+      <div className="flex flex-col gap-1.5">
         <label htmlFor="category_slug" className="font-body text-sm font-medium text-ink">
           Category <span className="text-kraft-dark">*</span>
         </label>

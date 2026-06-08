@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AdminHeader } from '../AdminHeader';
 import { ProductIcon } from '../../components/ProductIcon';
+import { ProductImage } from '../../components/ProductImage';
 import { getCategories, getSubcategories, getColours } from '../../data/products';
 import { adminGetProducts } from './queries';
 import { DeleteProductButton } from './DeleteProductButton';
@@ -76,10 +77,17 @@ export default async function AdminProductsPage() {
                   className="bg-white border border-cream-dark rounded-lg p-3 flex flex-wrap items-center gap-x-4 gap-y-3"
                 >
                   <div
-                    className="w-14 h-14 rounded border border-cream-dark flex items-center justify-center flex-shrink-0"
+                    className="relative overflow-hidden w-14 h-14 rounded border border-cream-dark flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: `${p.accentColor}12` }}
                   >
-                    <ProductIcon color={p.accentColor} category={p.categorySlug} className="w-6 h-9" />
+                    <ProductImage
+                      image={p.image}
+                      accentColor={p.accentColor}
+                      category={p.categorySlug}
+                      alt={p.name}
+                      sizes="56px"
+                      iconClassName="w-6 h-9"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-[8rem]">

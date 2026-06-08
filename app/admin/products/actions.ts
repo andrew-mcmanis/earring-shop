@@ -3,6 +3,29 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '../../lib/supabase-server';
+import { createServiceClient } from '../../lib/supabase';
+
+const BUCKET = 'product-images';
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+async function uploadImage(file: File): Promise<{ url: string } | { error: string }> {
+  if (!file.type.startsWith('image/')) return { error: 'Please choose an image file (JPG, PNG, etc.).' };
+  if (file.size > MAX_IMAGE_BYTES) return { error: 'Image must be under 8MB.' };
+
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = `products/${crypto.randomUUID()}.${ext}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+
+  const supabase = createServiceClient();
+  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) return { error: `Image upload failed: ${error.message}` };
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl };
+}
 
 export interface ProductFormState {
   status: 'idle' | 'error';
@@ -58,6 +81,19 @@ async function parseProduct(formData: FormData): Promise<
     if (colour?.hex) accentColor = colour.hex;
   }
 
+  // Image: upload a new file, remove the existing one, or keep what's there.
+  let imageUrl: string | null = str(formData, 'current_image') || null;
+  const file = formData.get('image');
+  if (file instanceof File && file.size > 0) {
+    const res = await uploadImage(file);
+    if ('error' in res) {
+      return { ok: false, state: { status: 'error', message: res.error, fieldErrors: { image: res.error } } };
+    }
+    imageUrl = res.url;
+  } else if (formData.get('remove_image') != null) {
+    imageUrl = null;
+  }
+
   return {
     ok: true,
     values: {
@@ -68,6 +104,7 @@ async function parseProduct(formData: FormData): Promise<
       subcategory_slug: subcategorySlug,
       colour_slug: colourSlug,
       accent_color: accentColor,
+      image_url: imageUrl,
       visible,
     },
   };

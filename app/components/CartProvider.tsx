@@ -15,6 +15,7 @@ export interface CartItem {
   price: number;
   accentColor: string;
   categorySlug: string;
+  image: string | null;
   qty: number;
 }
 

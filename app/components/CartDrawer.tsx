@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
 import { ProductIcon } from './ProductIcon';
+import { ProductImage } from './ProductImage';
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, setQty, removeItem, clear, totalCount, totalPrice } = useCart();
@@ -84,10 +85,17 @@ export function CartDrawer() {
             {items.map((item) => (
               <li key={item.id} className="flex gap-3 py-4">
                 <div
-                  className="w-16 h-16 rounded border border-cream-dark flex items-center justify-center flex-shrink-0"
+                  className="relative overflow-hidden w-16 h-16 rounded border border-cream-dark flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${item.accentColor}12` }}
                 >
-                  <ProductIcon color={item.accentColor} category={item.categorySlug} className="w-7 h-10" />
+                  <ProductImage
+                    image={item.image}
+                    accentColor={item.accentColor}
+                    category={item.categorySlug}
+                    alt={item.name}
+                    sizes="64px"
+                    iconClassName="w-7 h-10"
+                  />
                 </div>
 
                 <div className="flex-1 min-w-0">
