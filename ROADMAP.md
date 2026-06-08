@@ -3,7 +3,7 @@
 A handmade-earring storefront for Andrew's sister. This file tracks what's
 built and the agreed direction for what's next.
 
-_Last updated: 2026-06-07._
+_Last updated: 2026-06-08._
 
 ---
 
@@ -46,9 +46,17 @@ be involved once she starts using it.
 2. **Image upload + storage** for her photos
 3. **Authentication** — a private login, just for her, to reach the admin area
 4. **Admin dashboard** — screens to add/edit/delete products, upload photos,
-   set price/description/labels, and **view incoming orders**
+   set price/description/labels (orders themselves go to ClearInvoice — see
+   below — so the admin focuses on products)
 5. **Deployment** — hosted and always-on (not just Andrew's laptop), with the
    database in the cloud, since Andrew won't be maintaining it
+
+**Approach chosen (2026-06-08): Path 1 first.** Build the standalone shop for
+the sister now, with **orders flowing into ClearInvoice as draft invoices**
+(the shop manages products; ClearInvoice handles orders → invoices → payment).
+Build the order→invoice integration cleanly so it's reusable, with the explicit
+intention of later generalising the storefront into a ClearInvoice feature
+(**Path 2** — see "Strategic direction" at the foot of this file).
 
 ### Product taxonomy (confirmed by owner)
 
@@ -90,13 +98,40 @@ Implications:
 - **Vercel** for hosting/deployment (free tier; same ecosystem as the current
   Next.js app).
 
-### Suggested build order (incremental)
-1. Move products into a Supabase table; shop reads from the DB
-2. Add `image` field + Supabase Storage; swap placeholder for real `<Image>`
-3. Admin auth (her login) + protected `/admin` area
-4. Admin product CRUD (create/edit/delete, photo upload, labels, price)
-5. Orders persisted to the DB + an admin orders view
-6. Deploy to Vercel; final hardening (validation, friendly errors)
+### Build plan — Path 1 (all decisions settled)
+
+**Phase 0 — Foundations.** Create a Supabase project for the shop (its own,
+separate from ClearInvoice); add the Supabase client libs + env vars.
+
+**Phase 1 — Products in the database.** Schema with data-driven labels:
+`categories` (Earrings/Bookmarks/Gifts), `subcategories` (parent → category;
+Earrings only for now), `colours` (name + swatch hex), `products` (name,
+description, price, category, optional subcategory, optional colour, visibility,
+sort). Seed with the current 12 as sample data. Point the public shop at the DB;
+rework filters to **Category / subcategory + Colour** (remove Metal); generalise
+earrings-only copy/components to cover all three categories.
+
+**Phase 2 — Images.** Add image field(s) + Supabase Storage; swap the
+placeholder for real `<Image>` (placeholder stays until photos arrive).
+
+**Phase 3 — Admin auth.** Supabase Auth (email + password **and** Google);
+protected `/admin` area with middleware.
+
+**Phase 4 — Admin product + label management.** CRUD for products (create /
+edit / delete, photo upload, price, description, category/subcategory/colour,
+show-hide) and a "manage labels" area (add/edit categories, subcategories,
+colours with swatches).
+
+**Phase 5 — Orders → ClearInvoice draft invoices.** Add a secure intake
+endpoint to the `clearinvoice` repo (`POST /api/external/orders`, shared-secret
+auth) that creates a `client` + **draft `invoice`** + `invoice_items` via the
+service-role key; wire the shop's existing `forwardOrderToClearInvoice()` to it
+and set `CLEARINVOICE_INTAKE_URL` + `CLEARINVOICE_INTAKE_SECRET`.
+_Confirm at this point:_ which ClearInvoice account owns the invoices, and VAT
+treatment (default: no VAT).
+
+**Phase 6 — Deploy + harden.** Deploy to Vercel, wire env vars, optional custom
+domain; final validation, empty states, SEO.
 
 ---
 
@@ -114,24 +149,39 @@ These shape the admin design, so worth settling before building:
 - _(Resolved)_ **Attributes** — Metal removed; Colour kept across all
   categories, optional per product. Still optional/low-priority: whether
   Bookmarks/Gifts want any bespoke attributes of their own later.
-- **Orders** — should orders appear in *her* admin dashboard (likely yes, since
-  Andrew is hands-off)? If so, the **ClearInvoice integration may not be needed
-  at all** — or kept so completed orders also become invoices.
+- _(Resolved)_ **Orders → ClearInvoice as draft invoices.** Path 1 chosen: the
+  shop's admin manages products; orders flow into ClearInvoice (draft invoices)
+  which already handles customers, line items, PDF, email, and payment. No
+  separate order system is built in the shop. (Remaining detail confirmed at
+  Phase 5: which ClearInvoice account, VAT.)
 - _(Resolved)_ **Login — both email + password AND Google.** Owner gets both
   sign-in methods (Supabase Auth supports both natively). Google needs a one-off
   Google OAuth client wired into Supabase; doesn't affect the rest of the build.
 
 ---
 
-## ⏸️ Deferred / parked
+## 🔭 Strategic direction (Path 2 — later)
 
-- **ClearInvoice integration** — scoped but on hold pending the sister
-  conversation. ClearInvoice is Andrew's own Next.js 14 + Supabase app at
-  `C:\Projects\clearinvoice` (invoices = user-scoped `invoices` +
-  `invoice_items` rows, linked to a `clients` record, protected by RLS).
-  Recommended approach: add a secure intake endpoint to the ClearInvoice repo
-  (`POST /api/external/orders`, shared-secret auth) that inserts the invoice
-  via the service-role key. The shop already POSTs the right shape; wiring is
-  just setting `CLEARINVOICE_INTAKE_URL` + `CLEARINVOICE_INTAKE_SECRET`.
-  **May be made redundant** by orders living in the new admin dashboard.
-- **Real product photography** — waiting on the sister's photos.
+The earring shop is **customer zero** for a potential ClearInvoice feature:
+hosted **storefronts / landing pages** for ClearInvoice users that capture the
+customer and create a **draft invoice** automatically. It fits unusually well
+because ClearInvoice already has the whole engine — clients, invoice_items,
+draft-invoice status, PDF, Resend email, Stripe Connect "pay now", Supabase
+auth (email + Google) and storage. The marginal build is a public catalogue +
+order capture, not a new commerce engine, and the storefront UI built here
+becomes the rendering template.
+
+Plan: ship Path 1 for the sister first to prove the order→draft-invoice flow,
+then generalise into a multi-tenant ClearInvoice feature (routing/subdomains
+per store, public-read product data, per-tenant theming + image storage). Keep
+it deliberately **invoice-first / made-to-order** — not a full Shopify clone.
+
+ClearInvoice technical notes (for Phase 5 integration): Andrew's own Next.js 14
++ Supabase app at `C:\Projects\clearinvoice`; invoices are user-scoped
+(`invoices` + `invoice_items`, linked to a `clients` record, protected by RLS);
+`draft` is a native invoice status.
+
+## ⏸️ Parked
+
+- **Real product photography** — waiting on the sister's photos. The image slot
+  and (after Phase 2) the upload flow will be ready to receive them.
