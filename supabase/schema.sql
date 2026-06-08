@@ -69,3 +69,17 @@ create policy "admin write categories"    on categories    for all using (auth.r
 create policy "admin write subcategories" on subcategories for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin write colours"       on colours       for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 create policy "admin write products"      on products      for all using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+
+-- ============================================================
+-- Table privileges for the Data API roles
+--   Needed because the project has "automatically expose new tables" OFF.
+--   RLS (above) still governs which rows each role may touch.
+-- ============================================================
+
+grant usage on schema public to anon, authenticated;
+
+-- Public storefront can read labels + products
+grant select on categories, subcategories, colours, products to anon, authenticated;
+
+-- The signed-in owner (admin) can manage everything
+grant insert, update, delete on categories, subcategories, colours, products to authenticated;
