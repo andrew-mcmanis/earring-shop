@@ -17,12 +17,10 @@ export default async function Home() {
 
       <section className="bg-ink text-cream py-16 px-4 text-center">
         <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold mb-4 leading-[1.05]">
-          Handmade with love,
-          <br className="hidden sm:block" /> made just for you
+          Little handmade treasures
         </h1>
         <p className="font-body text-base text-kraft-light max-w-md mx-auto leading-relaxed">
-          Earrings, bookmarks and little gifts — each one crafted to order, so no two are
-          ever quite the same.
+          Earrings, bookmarks and gifts, lovingly made to order just for you.
         </p>
       </section>
 
