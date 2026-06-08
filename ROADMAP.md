@@ -22,14 +22,14 @@ The **frontend storefront** is built and working:
   cleanup, reduced-motion support
 - Pushed to GitHub: `github.com/andrew-mcmanis/earring-shop`
 
-**Phase 1 (in progress):** the storefront now uses the full
+**Phase 1 ✅ complete (connected to Supabase).** The storefront uses the full
 **Earrings / Bookmarks / Gifts** taxonomy (subcategories for earrings; Metal
-removed; Colour kept) behind an **async data-access layer**
-(`app/data/products.ts`) whose signatures already match the database. Category /
-subcategory / colour filters, category-aware placeholder shapes, and broadened
-copy are all live. The **Supabase schema + seed + setup guide** are written
-(`supabase/`, `SETUP.md`) — the shop reads sample data until Supabase keys are
-added, then flips to the DB with no component changes.
+removed; Colour kept) and **reads live from the Supabase database** via the
+async data-access layer (`app/data/products.ts`), falling back to the in-repo
+sample catalogue if the DB is ever unavailable. Supabase project created
+(region London), schema + seed run, public storefront reads confirmed working.
+Category / subcategory / colour filters, category-aware placeholders, and
+broadened copy are all live.
 
 ### Important caveats about the current state
 - **Products are still sample data** (`app/data/sample.ts`) until the Supabase
