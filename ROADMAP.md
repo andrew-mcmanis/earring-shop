@@ -50,6 +50,30 @@ be involved once she starts using it.
 5. **Deployment** — hosted and always-on (not just Andrew's laptop), with the
    database in the cloud, since Andrew won't be maintaining it
 
+### Product taxonomy (confirmed by owner)
+
+The shop is **not earrings-only**. Three top-level categories, with
+subcategories only under Earrings (for now):
+
+```
+Earrings
+  ├─ Dangles
+  ├─ Hoops
+  └─ Studs
+Bookmarks
+Gifts
+```
+
+Implications:
+- Data model needs a **category** (Earrings / Bookmarks / Gifts) + an optional
+  **subcategory** (Earrings only: Dangles / Hoops / Studs). Replaces the current
+  flat `type` list (the old "drop" and "huggie" types are dropped).
+- Navigation: top-level category nav, with Earrings expandable to its three
+  subcategories.
+- Copy/branding: hero says "Handmade earrings" — now too narrow; needs to cover
+  bookmarks and gifts too. (`EarringIcon`, earring-specific copy also assume
+  earrings-only.)
+
 ### Recommended stack
 - **Supabase** — already used by Andrew's other app (ClearInvoice). Bundles the
   three backend needs in one service: **Postgres database + Auth + Storage**.
@@ -74,6 +98,10 @@ These shape the admin design, so worth settling before building:
 - **Labels** — should she be able to *invent new* types/metals/colours herself,
   or pick from a fixed set agreed up front? (Fixed = simpler & safer; custom =
   more flexible but fiddlier, esp. colour swatches.)
+- **Attributes per category** — do **Metal** and **Colour** apply to Bookmarks
+  and Gifts, or are they earrings-only? If earrings-only, filters/admin fields
+  should be **category-specific** (show Metal/Colour only for Earrings).
+  Bookmarks/Gifts may want their own attributes (e.g. material/theme).
 - **Orders** — should orders appear in *her* admin dashboard (likely yes, since
   Andrew is hands-off)? If so, the **ClearInvoice integration may not be needed
   at all** — or kept so completed orders also become invoices.
