@@ -131,13 +131,19 @@ edit / delete, photo upload, price, description, category/subcategory/colour,
 show-hide) and a "manage labels" area (add/edit categories, subcategories,
 colours with swatches).
 
-**Phase 5 — Orders → ClearInvoice draft invoices.** Add a secure intake
-endpoint to the `clearinvoice` repo (`POST /api/external/orders`, shared-secret
-auth) that creates a `client` + **draft `invoice`** + `invoice_items` via the
-service-role key; wire the shop's existing `forwardOrderToClearInvoice()` to it
-and set `CLEARINVOICE_INTAKE_URL` + `CLEARINVOICE_INTAKE_SECRET`.
-_Confirm at this point:_ which ClearInvoice account owns the invoices, and VAT
-treatment (default: no VAT).
+**Phase 5 — Orders + Stripe payment.** _(Payment model confirmed 2026-06-08:
+pay-at-checkout via Stripe; orders shown in the shop's own admin — "option a".)_
+- Persist orders to Supabase (`orders` + `order_items`), Stripe-ready fields
+  (status pending/paid, stripe_session_id), and an **Orders page in the admin**
+  so the owner sees and fulfils them. _This part can be built now._
+- **Stripe Checkout** (deferred — "cross when we need to"): the owner's **own
+  Stripe account** (single merchant, not Connect); the shop creates a Checkout
+  Session server-side → Stripe-hosted payment page → webhook marks the order
+  paid. Needs: her Stripe account, **deployment** (live webhooks need a public
+  URL), and **GBP/£** prices. Build + test in Stripe **test mode** first.
+- ClearInvoice is **not** in the payment path. Pushing paid orders to
+  ClearInvoice as records is now optional/Path 2, superseding the earlier
+  "order → draft invoice" plan.
 
 **Phase 6 — Deploy + harden.** Deploy to Vercel, wire env vars, optional custom
 domain; final validation, empty states, SEO.
@@ -158,11 +164,14 @@ These shape the admin design, so worth settling before building:
 - _(Resolved)_ **Attributes** — Metal removed; Colour kept across all
   categories, optional per product. Still optional/low-priority: whether
   Bookmarks/Gifts want any bespoke attributes of their own later.
-- _(Resolved)_ **Orders → ClearInvoice as draft invoices.** Path 1 chosen: the
-  shop's admin manages products; orders flow into ClearInvoice (draft invoices)
-  which already handles customers, line items, PDF, email, and payment. No
-  separate order system is built in the shop. (Remaining detail confirmed at
-  Phase 5: which ClearInvoice account, VAT.)
+- _(Resolved, superseded 2026-06-08)_ **Orders + payment.** The sister wants
+  **Stripe payment at checkout**, and orders are shown in the **shop's own admin
+  ("option a")** — not ClearInvoice. So: customer pays on the shop via Stripe
+  Checkout (her own Stripe account), the order is saved to Supabase and appears
+  in her admin Orders page. Stripe build is **deferred** ("cross when we need
+  to"); the earlier "order → ClearInvoice draft invoice" plan is dropped from the
+  critical path (optional/Path 2 for records only). _Still to confirm with her:_
+  shipping (free / flat rate / calculated).
 - _(Resolved)_ **Login — both email + password AND Google.** Owner gets both
   sign-in methods (Supabase Auth supports both natively). Google needs a one-off
   Google OAuth client wired into Supabase; doesn't affect the rest of the build.

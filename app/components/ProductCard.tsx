@@ -47,7 +47,7 @@ export function ProductCard({ product, badge, colour }: ProductCardProps) {
 
         <div className="flex items-center justify-between mt-3">
           <span className="font-body text-lg font-semibold text-ink tabular-nums">
-            ${product.price.toFixed(2)}
+            £{product.price.toFixed(2)}
           </span>
           <AddToCartButton product={product} />
         </div>

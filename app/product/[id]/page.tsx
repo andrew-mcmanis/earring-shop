@@ -111,7 +111,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </h1>
 
             <p className="font-body text-2xl font-semibold text-kraft-dark tabular-nums">
-              ${product.price.toFixed(2)}
+              £{product.price.toFixed(2)}
             </p>
 
             <p className="font-body text-base text-ink-light leading-relaxed max-w-prose">
@@ -172,7 +172,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       {item.name}
                     </h3>
                     <span className="font-body text-sm font-semibold text-ink tabular-nums">
-                      ${item.price.toFixed(2)}
+                      £{item.price.toFixed(2)}
                     </span>
                   </div>
                 </Link>

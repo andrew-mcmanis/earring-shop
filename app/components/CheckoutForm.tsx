@@ -173,7 +173,7 @@ export function CheckoutForm() {
                   <p className="font-body text-xs text-ink-light">Qty {item.qty}</p>
                 </div>
                 <span className="font-body text-sm font-semibold text-ink tabular-nums">
-                  ${(item.price * item.qty).toFixed(2)}
+                  £{(item.price * item.qty).toFixed(2)}
                 </span>
               </li>
             ))}
@@ -181,7 +181,7 @@ export function CheckoutForm() {
           <div className="flex items-center justify-between border-t border-kraft-light pt-3">
             <span className="font-body text-sm text-ink-light">Subtotal</span>
             <span className="font-body text-xl font-semibold text-ink tabular-nums">
-              ${totalPrice.toFixed(2)}
+              £{totalPrice.toFixed(2)}
             </span>
           </div>
         </div>
