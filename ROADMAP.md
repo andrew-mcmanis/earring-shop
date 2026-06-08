@@ -64,10 +64,19 @@ Bookmarks
 Gifts
 ```
 
+**Attributes (confirmed):**
+- **Metal — removed.** Not needed. Retire the metal field, filter pills, and
+  metal data from the current prototype.
+- **Colour — kept.** Applies across **all categories** (earrings, bookmarks,
+  gifts), **optional per product** (left blank when it doesn't apply). Keeps the
+  colour swatches.
+- So the shop filters become **Category / subcategory + Colour**.
+
 Implications:
 - Data model needs a **category** (Earrings / Bookmarks / Gifts) + an optional
-  **subcategory** (Earrings only: Dangles / Hoops / Studs). Replaces the current
-  flat `type` list (the old "drop" and "huggie" types are dropped).
+  **subcategory** (Earrings only: Dangles / Hoops / Studs) + optional **colour**.
+  Replaces the current flat `type` + `metal` fields (old "drop"/"huggie" types
+  and all metal data are dropped).
 - Navigation: top-level category nav, with Earrings expandable to its three
   subcategories.
 - Copy/branding: hero says "Handmade earrings" — now too narrow; needs to cover
@@ -98,10 +107,9 @@ These shape the admin design, so worth settling before building:
 - **Labels** — should she be able to *invent new* types/metals/colours herself,
   or pick from a fixed set agreed up front? (Fixed = simpler & safer; custom =
   more flexible but fiddlier, esp. colour swatches.)
-- **Attributes per category** — do **Metal** and **Colour** apply to Bookmarks
-  and Gifts, or are they earrings-only? If earrings-only, filters/admin fields
-  should be **category-specific** (show Metal/Colour only for Earrings).
-  Bookmarks/Gifts may want their own attributes (e.g. material/theme).
+- _(Resolved)_ **Attributes** — Metal removed; Colour kept across all
+  categories, optional per product. Still optional/low-priority: whether
+  Bookmarks/Gifts want any bespoke attributes of their own later.
 - **Orders** — should orders appear in *her* admin dashboard (likely yes, since
   Andrew is hands-off)? If so, the **ClearInvoice integration may not be needed
   at all** — or kept so completed orders also become invoices.
