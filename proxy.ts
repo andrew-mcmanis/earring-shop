@@ -4,7 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 // Protects the /admin area: signed-out visitors are sent to the login page,
 // and signed-in visitors are kept out of the login page. Also refreshes the
 // Supabase auth session cookie on each admin request.
-export async function middleware(request: NextRequest) {
+// (Next.js 16 renamed the "middleware" convention to "proxy".)
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

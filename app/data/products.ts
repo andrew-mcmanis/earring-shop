@@ -15,7 +15,7 @@ import {
 import { isSupabaseConfigured, createReadClient } from '../lib/supabase';
 
 // Row shapes as returned by the database (snake_case).
-interface ProductRow {
+export interface ProductRow {
   id: string;
   name: string;
   description: string;
@@ -29,7 +29,7 @@ interface ProductRow {
   sort_order: number;
 }
 
-function mapProduct(row: ProductRow): Product {
+export function mapProduct(row: ProductRow): Product {
   return {
     id: row.id,
     name: row.name,

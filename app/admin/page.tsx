@@ -9,8 +9,8 @@ const SECTIONS = [
   {
     href: '/admin/products',
     title: 'Products',
-    description: 'Add, edit and remove items. Upload photos, set prices and labels.',
-    ready: false,
+    description: 'Add, edit and remove items. Set prices, categories and colours.',
+    ready: true,
   },
   {
     href: '/admin/orders',
@@ -66,22 +66,37 @@ export default async function AdminPage() {
         <h2 className="font-heading text-4xl font-bold text-ink mb-6">Welcome back</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {SECTIONS.map((s) => (
-            <div
-              key={s.href}
-              className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-2"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="font-heading text-2xl font-bold text-ink">{s.title}</h3>
-                {!s.ready && (
-                  <span className="font-body text-[10px] uppercase tracking-wider text-ink-light bg-cream-dark px-2 py-0.5 rounded">
-                    Soon
-                  </span>
-                )}
+          {SECTIONS.map((s) => {
+            const inner = (
+              <>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-2xl font-bold text-ink">{s.title}</h3>
+                  {!s.ready && (
+                    <span className="font-body text-[10px] uppercase tracking-wider text-ink-light bg-cream-dark px-2 py-0.5 rounded">
+                      Soon
+                    </span>
+                  )}
+                </div>
+                <p className="font-body text-sm text-ink-light leading-relaxed">{s.description}</p>
+              </>
+            );
+            return s.ready ? (
+              <Link
+                key={s.href}
+                href={s.href}
+                className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-2 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+              >
+                {inner}
+              </Link>
+            ) : (
+              <div
+                key={s.href}
+                className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-2 opacity-70"
+              >
+                {inner}
               </div>
-              <p className="font-body text-sm text-ink-light leading-relaxed">{s.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </main>
     </div>

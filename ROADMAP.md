@@ -129,10 +129,17 @@ function). Protected `/admin` via `middleware.ts`; branded `/admin/login`;
 dashboard shell with sign-out and Products/Orders/Labels sections. Verified:
 route protection, sign-in, and sign-out all work.
 
-**Phase 4 — Admin product + label management.** CRUD for products (create /
-edit / delete, photo upload, price, description, category/subcategory/colour,
-show-hide) and a "manage labels" area (add/edit categories, subcategories,
-colours with swatches).
+**Phase 4 — Admin product + label management.**
+- ✅ **Product CRUD done:** `/admin/products` list (responsive cards, thumbnail,
+  meta, price, visibility toggle, edit, two-step delete), `/admin/products/new`
+  and `/admin/products/[id]/edit` with a shared form (validation, conditional
+  earring-type field, colour, show/hide). Writes use the signed-in user's
+  session (RLS `authenticated`); the shop revalidates on save. Verified live
+  (create → appears in admin + shop; delete removes it).
+- ⏳ **Image upload** (Phase 2 folded in): upload to the `product-images`
+  Storage bucket from the product form; render with `next/image`.
+- ⏳ **Labels management:** add/edit categories, subcategories, colours (name +
+  swatch).
 
 **Phase 5 — Orders + Stripe payment.** _(Payment model confirmed 2026-06-08:
 pay-at-checkout via Stripe; orders shown in the shop's own admin — "option a".)_
