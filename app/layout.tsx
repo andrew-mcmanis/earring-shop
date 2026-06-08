@@ -21,7 +21,7 @@ const cabin = Cabin({
 export const metadata: Metadata = {
   title: 'BLG Creations',
   description:
-    'Handcrafted earrings made with love — shop unique designs in gold, silver, brass and more.',
+    'Handmade earrings, bookmarks and gifts — each piece crafted to order with love.',
 };
 
 export default function RootLayout({

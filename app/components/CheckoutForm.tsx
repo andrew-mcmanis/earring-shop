@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect } from 'react';
 import { useCart } from './CartProvider';
-import { EarringIcon } from './EarringIcon';
+import { ProductIcon } from './ProductIcon';
 import { placeOrder, type PlaceOrderState } from '../lib/orders';
 
 const initialState: PlaceOrderState = { status: 'idle' };
@@ -76,7 +76,7 @@ export function CheckoutForm() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center text-center gap-3 py-20">
-        <EarringIcon color="#D4B896" className="w-14 h-20" />
+        <ProductIcon color="#D4B896" className="w-14 h-20" />
         <h2 className="font-heading text-3xl font-bold text-kraft-light">Your cart is empty</h2>
         <p className="font-body text-sm text-ink-light max-w-xs">
           Add a pair you love, then come back to check out.
@@ -166,7 +166,7 @@ export function CheckoutForm() {
                   className="w-12 h-12 rounded border border-kraft-light flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${item.accentColor}12` }}
                 >
-                  <EarringIcon color={item.accentColor} className="w-5 h-7" />
+                  <ProductIcon color={item.accentColor} category={item.categorySlug} className="w-5 h-7" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-medium text-ink leading-tight">{item.name}</p>

@@ -14,6 +14,7 @@ export interface CartItem {
   name: string;
   price: number;
   accentColor: string;
+  categorySlug: string;
   qty: number;
 }
 

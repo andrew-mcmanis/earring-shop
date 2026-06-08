@@ -1,32 +1,54 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { earrings, type EarringType, type Metal, type Colour } from '../data/earrings';
+import { useMemo, useState } from 'react';
+import type { Category, Subcategory, Colour, Product } from '../data/types';
 import { FilterBar } from './FilterBar';
 import { ProductCard } from './ProductCard';
 
-export function ShopContent() {
-  const [selectedType, setSelectedType] = useState<EarringType | 'all'>('all');
-  const [selectedMetal, setSelectedMetal] = useState<Metal | 'all'>('all');
-  const [selectedColour, setSelectedColour] = useState<Colour | 'all'>('all');
+interface ShopContentProps {
+  products: Product[];
+  categories: Category[];
+  subcategories: Subcategory[];
+  colours: Colour[];
+}
+
+export function ShopContent({ products, categories, subcategories, colours }: ShopContentProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | 'all'>('all');
+  const [selectedColour, setSelectedColour] = useState<string | 'all'>('all');
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const colourBySlug = useMemo(() => new Map(colours.map((c) => [c.slug, c])), [colours]);
+  const subcategoryNameBySlug = useMemo(
+    () => new Map(subcategories.map((s) => [s.slug, s.name])),
+    [subcategories],
+  );
+  const categoryNameBySlug = useMemo(
+    () => new Map(categories.map((c) => [c.slug, c.name])),
+    [categories],
+  );
 
   const filtered = useMemo(
     () =>
-      earrings.filter((e) => {
-        if (selectedType !== 'all' && e.type !== selectedType) return false;
-        if (selectedMetal !== 'all' && e.metal !== selectedMetal) return false;
-        if (selectedColour !== 'all' && e.colour !== selectedColour) return false;
+      products.filter((p) => {
+        if (selectedCategory !== 'all' && p.categorySlug !== selectedCategory) return false;
+        if (selectedSubcategory !== 'all' && p.subcategorySlug !== selectedSubcategory) return false;
+        if (selectedColour !== 'all' && p.colourSlug !== selectedColour) return false;
         return true;
       }),
-    [selectedType, selectedMetal, selectedColour],
+    [products, selectedCategory, selectedSubcategory, selectedColour],
   );
 
   const activeFilterCount = [
-    selectedType !== 'all',
-    selectedMetal !== 'all',
+    selectedCategory !== 'all',
+    selectedSubcategory !== 'all',
     selectedColour !== 'all',
   ].filter(Boolean).length;
+
+  function badgeFor(p: Product): string {
+    if (p.subcategorySlug) return subcategoryNameBySlug.get(p.subcategorySlug) ?? p.subcategorySlug;
+    return categoryNameBySlug.get(p.categorySlug) ?? p.categorySlug;
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -54,33 +76,39 @@ export function ShopContent() {
       </div>
 
       {/* Filter panel — always visible on desktop, toggled on mobile */}
-      {(mobileFiltersOpen || true) && (
-        <div className={mobileFiltersOpen ? 'lg:block' : 'hidden lg:block'}>
-          <FilterBar
-            selectedType={selectedType}
-            selectedMetal={selectedMetal}
-            selectedColour={selectedColour}
-            onTypeChange={setSelectedType}
-            onMetalChange={setSelectedMetal}
-            onColourChange={setSelectedColour}
-            resultCount={filtered.length}
-            onMobileClose={() => setMobileFiltersOpen(false)}
-          />
-        </div>
-      )}
+      <div className={mobileFiltersOpen ? 'lg:block' : 'hidden lg:block'}>
+        <FilterBar
+          categories={categories}
+          subcategories={subcategories}
+          colours={colours}
+          selectedCategory={selectedCategory}
+          selectedSubcategory={selectedSubcategory}
+          selectedColour={selectedColour}
+          onCategoryChange={setSelectedCategory}
+          onSubcategoryChange={setSelectedSubcategory}
+          onColourChange={setSelectedColour}
+          resultCount={filtered.length}
+          onMobileClose={() => setMobileFiltersOpen(false)}
+        />
+      </div>
 
       <main className="flex-1 min-w-0" id="products" aria-label="Product listing">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center gap-3">
-            <p className="font-heading text-5xl font-bold text-kraft-light">No earrings found</p>
+            <p className="font-heading text-5xl font-bold text-kraft-light">Nothing here yet</p>
             <p className="font-body text-sm text-ink-light">
               Try adjusting your filters to see more results.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filtered.map((earring) => (
-              <ProductCard key={earring.id} earring={earring} />
+            {filtered.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                badge={badgeFor(product)}
+                colour={product.colourSlug ? colourBySlug.get(product.colourSlug) : undefined}
+              />
             ))}
           </div>
         )}

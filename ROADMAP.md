@@ -22,11 +22,20 @@ The **frontend storefront** is built and working:
   cleanup, reduced-motion support
 - Pushed to GitHub: `github.com/andrew-mcmanis/earring-shop`
 
+**Phase 1 (in progress):** the storefront now uses the full
+**Earrings / Bookmarks / Gifts** taxonomy (subcategories for earrings; Metal
+removed; Colour kept) behind an **async data-access layer**
+(`app/data/products.ts`) whose signatures already match the database. Category /
+subcategory / colour filters, category-aware placeholder shapes, and broadened
+copy are all live. The **Supabase schema + seed + setup guide** are written
+(`supabase/`, `SETUP.md`) — the shop reads sample data until Supabase keys are
+added, then flips to the DB with no component changes.
+
 ### Important caveats about the current state
-- **Products are hardcoded.** The 12 earrings live in a static file
-  (`app/data/earrings.ts`) and can only be changed by editing code.
-- **No real images.** Cards use an SVG earring-silhouette placeholder; there
-  is a ready image slot but no photos and no `image` field yet.
+- **Products are still sample data** (`app/data/sample.ts`) until the Supabase
+  project is created (see `SETUP.md`) and the data layer is pointed at it.
+- **No real images.** Cards use a category-aware SVG placeholder; the `image`
+  field exists in the model + schema, ready for Phase 2 upload.
 - **Orders go nowhere durable.** Checkout validates server-side then just logs
   the order (the `forwardOrderToClearInvoice()` helper is dormant until
   configured). A placed order is currently not saved or sent anywhere.

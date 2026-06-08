@@ -1,15 +1,17 @@
 'use client';
 
-import type { EarringType, Metal, Colour } from '../data/earrings';
-import { TYPES, METALS, COLOURS } from '../data/earrings';
+import type { Category, Subcategory, Colour } from '../data/types';
 
 interface FilterBarProps {
-  selectedType: EarringType | 'all';
-  selectedMetal: Metal | 'all';
-  selectedColour: Colour | 'all';
-  onTypeChange: (type: EarringType | 'all') => void;
-  onMetalChange: (metal: Metal | 'all') => void;
-  onColourChange: (colour: Colour | 'all') => void;
+  categories: Category[];
+  subcategories: Subcategory[];
+  colours: Colour[];
+  selectedCategory: string | 'all';
+  selectedSubcategory: string | 'all';
+  selectedColour: string | 'all';
+  onCategoryChange: (slug: string | 'all') => void;
+  onSubcategoryChange: (slug: string | 'all') => void;
+  onColourChange: (slug: string | 'all') => void;
   resultCount: number;
   onMobileClose?: () => void;
 }
@@ -26,21 +28,28 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
 }
 
 export function FilterBar({
-  selectedType,
-  selectedMetal,
+  categories,
+  subcategories,
+  colours,
+  selectedCategory,
+  selectedSubcategory,
   selectedColour,
-  onTypeChange,
-  onMetalChange,
+  onCategoryChange,
+  onSubcategoryChange,
   onColourChange,
   resultCount,
   onMobileClose,
 }: FilterBarProps) {
   const hasActiveFilters =
-    selectedType !== 'all' || selectedMetal !== 'all' || selectedColour !== 'all';
+    selectedCategory !== 'all' || selectedSubcategory !== 'all' || selectedColour !== 'all';
+
+  // Subcategories only apply to Earrings — show them only when that's selected.
+  const showSubcategories = selectedCategory === 'earrings';
+  const earringSubs = subcategories.filter((s) => s.categorySlug === 'earrings');
 
   function clearAll() {
-    onTypeChange('all');
-    onMetalChange('all');
+    onCategoryChange('all');
+    onSubcategoryChange('all');
     onColourChange('all');
   }
 
@@ -64,75 +73,98 @@ export function FilterBar({
           </div>
         </div>
 
-        {/* Type */}
-        <FilterSection label="Type">
+        {/* Category */}
+        <FilterSection label="Category">
           <div className="flex flex-col gap-1">
-            {TYPES.map((t) => (
+            <button
+              onClick={() => {
+                onCategoryChange('all');
+                onSubcategoryChange('all');
+              }}
+              aria-pressed={selectedCategory === 'all'}
+              className={`cursor-pointer text-left font-body text-sm px-3 py-2 rounded transition-colors duration-150 ${
+                selectedCategory === 'all'
+                  ? 'bg-kraft text-cream font-semibold'
+                  : 'text-ink hover:bg-kraft-light/40'
+              }`}
+            >
+              All Products
+            </button>
+            {categories.map((c) => (
               <button
-                key={t.value}
-                onClick={() => onTypeChange(t.value)}
-                aria-pressed={selectedType === t.value}
+                key={c.slug}
+                onClick={() => {
+                  onCategoryChange(c.slug);
+                  onSubcategoryChange('all');
+                }}
+                aria-pressed={selectedCategory === c.slug}
                 className={`cursor-pointer text-left font-body text-sm px-3 py-2 rounded transition-colors duration-150 ${
-                  selectedType === t.value
+                  selectedCategory === c.slug
                     ? 'bg-kraft text-cream font-semibold'
                     : 'text-ink hover:bg-kraft-light/40'
                 }`}
               >
-                {t.label}
+                {c.name}
               </button>
             ))}
           </div>
         </FilterSection>
 
-        {/* Metal */}
-        <FilterSection label="Metal">
-          <div className="flex flex-wrap gap-2">
-            {METALS.map((m) => (
+        {/* Subcategory — Earrings only */}
+        {showSubcategories && (
+          <FilterSection label="Earring type">
+            <div className="flex flex-wrap gap-2">
               <button
-                key={m.value}
-                onClick={() => onMetalChange(m.value)}
-                aria-pressed={selectedMetal === m.value}
+                onClick={() => onSubcategoryChange('all')}
+                aria-pressed={selectedSubcategory === 'all'}
                 className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded border transition-colors duration-150 ${
-                  selectedMetal === m.value
+                  selectedSubcategory === 'all'
                     ? 'bg-kraft border-kraft text-cream font-semibold'
                     : 'border-kraft-light text-ink hover:border-kraft'
                 }`}
               >
-                {m.label}
+                All
               </button>
-            ))}
-          </div>
-        </FilterSection>
+              {earringSubs.map((s) => (
+                <button
+                  key={s.slug}
+                  onClick={() => onSubcategoryChange(s.slug)}
+                  aria-pressed={selectedSubcategory === s.slug}
+                  className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded border transition-colors duration-150 ${
+                    selectedSubcategory === s.slug
+                      ? 'bg-kraft border-kraft text-cream font-semibold'
+                      : 'border-kraft-light text-ink hover:border-kraft'
+                  }`}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </FilterSection>
+        )}
 
         {/* Colour */}
         <FilterSection label="Colour">
           <div className="flex flex-wrap gap-2 items-center">
-            {COLOURS.map((c) => {
-              const isActive = selectedColour === c.value;
-
-              if (c.value === 'all') {
-                return (
-                  <button
-                    key="all"
-                    onClick={() => onColourChange('all')}
-                    aria-pressed={isActive}
-                    className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded border transition-colors duration-150 ${
-                      isActive
-                        ? 'bg-kraft border-kraft text-cream font-semibold'
-                        : 'border-kraft-light text-ink hover:border-kraft'
-                    }`}
-                  >
-                    All
-                  </button>
-                );
-              }
-
+            <button
+              onClick={() => onColourChange('all')}
+              aria-pressed={selectedColour === 'all'}
+              className={`cursor-pointer font-body text-xs px-3 py-1.5 rounded border transition-colors duration-150 ${
+                selectedColour === 'all'
+                  ? 'bg-kraft border-kraft text-cream font-semibold'
+                  : 'border-kraft-light text-ink hover:border-kraft'
+              }`}
+            >
+              All
+            </button>
+            {colours.map((c) => {
+              const isActive = selectedColour === c.slug;
               return (
                 <button
-                  key={c.value}
-                  onClick={() => onColourChange(c.value)}
-                  title={c.label}
-                  aria-label={`Filter by ${c.label}${isActive ? ' (selected)' : ''}`}
+                  key={c.slug}
+                  onClick={() => onColourChange(c.slug)}
+                  title={c.name}
+                  aria-label={`Filter by ${c.name}${isActive ? ' (selected)' : ''}`}
                   aria-pressed={isActive}
                   className={`cursor-pointer w-7 h-7 rounded-full border-2 transition-all duration-150 hover:scale-110 ${
                     isActive
@@ -140,7 +172,7 @@ export function FilterBar({
                       : 'border-transparent hover:border-kraft-light'
                   }`}
                   style={
-                    c.value === 'multicolour'
+                    c.slug === 'multicolour'
                       ? {
                           background:
                             'conic-gradient(#C0392B 0deg, #9B59B6 90deg, #2E6DA4 180deg, #27AE60 270deg, #C0392B 360deg)',

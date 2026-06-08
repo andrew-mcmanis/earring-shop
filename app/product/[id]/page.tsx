@@ -2,42 +2,67 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Header } from '../../components/Header';
-import { EarringIcon } from '../../components/EarringIcon';
+import { ProductIcon } from '../../components/ProductIcon';
 import { AddToCartButton } from '../../components/AddToCartButton';
-import { earrings } from '../../data/earrings';
+import {
+  getProduct,
+  getProducts,
+  getCategories,
+  getSubcategories,
+  getColours,
+} from '../../data/products';
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
 }
 
-export function generateStaticParams() {
-  return earrings.map((earring) => ({ id: earring.id }));
+export async function generateStaticParams() {
+  const products = await getProducts();
+  return products.map((p) => ({ id: p.id }));
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
-  const earring = earrings.find((e) => e.id === id);
+  const product = await getProduct(id);
 
-  if (!earring) {
-    return { title: 'Earring Not Found · BLG Creations' };
+  if (!product) {
+    return { title: 'Not Found · BLG Creations' };
   }
 
   return {
-    title: `${earring.name} · BLG Creations`,
-    description: earring.description,
+    title: `${product.name} · BLG Creations`,
+    description: product.description,
   };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
-  const earring = earrings.find((e) => e.id === id);
+  const product = await getProduct(id);
 
-  if (!earring) {
+  if (!product) {
     notFound();
   }
 
-  const related = earrings
-    .filter((e) => e.id !== earring.id && (e.type === earring.type || e.metal === earring.metal))
+  const [allProducts, categories, subcategories, colours] = await Promise.all([
+    getProducts(),
+    getCategories(),
+    getSubcategories(),
+    getColours(),
+  ]);
+
+  const categoryName = categories.find((c) => c.slug === product.categorySlug)?.name;
+  const subcategoryName = subcategories.find((s) => s.slug === product.subcategorySlug)?.name;
+  const colourName = colours.find((c) => c.slug === product.colourSlug)?.name;
+
+  // Related: same subcategory if it has one, otherwise same category.
+  const related = allProducts
+    .filter(
+      (p) =>
+        p.id !== product.id &&
+        (product.subcategorySlug
+          ? p.subcategorySlug === product.subcategorySlug
+          : p.categorySlug === product.categorySlug),
+    )
     .slice(0, 3);
 
   return (
@@ -61,45 +86,61 @@ export default async function ProductPage({ params }: ProductPageProps) {
           {/* Image */}
           <div
             className="w-full lg:w-1/2 aspect-square rounded-lg border border-cream-dark flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${earring.accentColor}12` }}
+            style={{ backgroundColor: `${product.accentColor}12` }}
           >
-            <EarringIcon color={earring.accentColor} className="w-40 h-60" />
+            <ProductIcon color={product.accentColor} category={product.categorySlug} className="w-40 h-60" />
           </div>
 
           {/* Details */}
           <div className="flex flex-col gap-4 lg:w-1/2">
             <div className="flex items-center gap-2">
-              <span className="bg-cream-dark text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-kraft-light">
-                {earring.type}
-              </span>
-              <span className="bg-cream-dark text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-kraft-light">
-                {earring.metal}
-              </span>
+              {categoryName && (
+                <span className="bg-cream-dark text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded border border-kraft-light">
+                  {categoryName}
+                </span>
+              )}
+              {subcategoryName && (
+                <span className="bg-cream-dark text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded border border-kraft-light">
+                  {subcategoryName}
+                </span>
+              )}
             </div>
 
             <h1 className="font-heading text-4xl sm:text-5xl font-bold text-ink leading-tight">
-              {earring.name}
+              {product.name}
             </h1>
 
             <p className="font-body text-2xl font-semibold text-kraft-dark tabular-nums">
-              ${earring.price.toFixed(2)}
+              ${product.price.toFixed(2)}
             </p>
 
             <p className="font-body text-base text-ink-light leading-relaxed max-w-prose">
-              {earring.description}
+              {product.description}
             </p>
 
             <dl className="font-body text-sm text-ink-light grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 mt-2">
-              <dt className="font-medium text-ink">Type</dt>
-              <dd className="capitalize">{earring.type}</dd>
-              <dt className="font-medium text-ink">Metal</dt>
-              <dd className="capitalize">{earring.metal}</dd>
-              <dt className="font-medium text-ink">Colour</dt>
-              <dd className="capitalize">{earring.colour}</dd>
+              {categoryName && (
+                <>
+                  <dt className="font-medium text-ink">Category</dt>
+                  <dd>{categoryName}</dd>
+                </>
+              )}
+              {subcategoryName && (
+                <>
+                  <dt className="font-medium text-ink">Type</dt>
+                  <dd>{subcategoryName}</dd>
+                </>
+              )}
+              {colourName && (
+                <>
+                  <dt className="font-medium text-ink">Colour</dt>
+                  <dd>{colourName}</dd>
+                </>
+              )}
             </dl>
 
             <div className="flex items-center gap-4 mt-4">
-              <AddToCartButton earring={earring} size="lg" />
+              <AddToCartButton product={product} size="lg" />
               <p className="font-body text-xs text-ink-light">
                 Made to order · Ships within 5–7 business days
               </p>
@@ -109,7 +150,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         {/* Related items */}
         {related.length > 0 && (
-          <section className="mt-16" aria-label="Related earrings">
+          <section className="mt-16" aria-label="Related products">
             <h2 className="font-heading text-3xl font-bold text-ink mb-5">You might also like</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {related.map((item) => (
@@ -123,7 +164,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     style={{ backgroundColor: `${item.accentColor}12` }}
                   >
                     <div className="transition-transform duration-300 group-hover:scale-105">
-                      <EarringIcon color={item.accentColor} />
+                      <ProductIcon color={item.accentColor} category={item.categorySlug} />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 p-4 border-t border-cream-dark">

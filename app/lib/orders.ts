@@ -1,6 +1,6 @@
 'use server';
 
-import { earrings } from '../data/earrings';
+import { getProducts } from '../data/products';
 import { forwardOrderToClearInvoice, type OrderLine } from './clearinvoice';
 
 export interface PlaceOrderState {
@@ -45,12 +45,13 @@ export async function placeOrder(
     // ignore malformed payload — handled by the empty check below
   }
 
+  const catalogue = await getProducts();
   const items: OrderLine[] = [];
   for (const entry of cart) {
-    const earring = earrings.find((e) => e.id === entry?.id);
+    const product = catalogue.find((p) => p.id === entry?.id);
     const quantity = Math.max(0, Math.floor(Number(entry?.qty) || 0));
-    if (earring && quantity > 0) {
-      items.push({ description: earring.name, quantity, unitPrice: earring.price });
+    if (product && quantity > 0) {
+      items.push({ description: product.name, quantity, unitPrice: product.price });
     }
   }
 

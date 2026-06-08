@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { useCart } from './CartProvider';
-import { EarringIcon } from './EarringIcon';
+import { ProductIcon } from './ProductIcon';
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, setQty, removeItem, clear, totalCount, totalPrice } = useCart();
@@ -67,7 +67,7 @@ export function CartDrawer() {
         {/* Body */}
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 px-6">
-            <EarringIcon color="#D4B896" className="w-14 h-20" />
+            <ProductIcon color="#D4B896" className="w-14 h-20" />
             <p className="font-heading text-3xl font-bold text-kraft-light">Your cart is empty</p>
             <p className="font-body text-sm text-ink-light max-w-xs">
               Browse the collection and add a pair you love — it&apos;ll show up here.
@@ -87,7 +87,7 @@ export function CartDrawer() {
                   className="w-16 h-16 rounded border border-cream-dark flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${item.accentColor}12` }}
                 >
-                  <EarringIcon color={item.accentColor} className="w-7 h-10" />
+                  <ProductIcon color={item.accentColor} category={item.categorySlug} className="w-7 h-10" />
                 </div>
 
                 <div className="flex-1 min-w-0">

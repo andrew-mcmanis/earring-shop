@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { Earring } from '../data/earrings';
+import type { Product } from '../data/types';
 import { useCart } from './CartProvider';
 
 interface AddToCartButtonProps {
-  earring: Earring;
+  product: Product;
   size?: 'sm' | 'lg';
   className?: string;
 }
 
-export function AddToCartButton({ earring, size = 'sm', className = '' }: AddToCartButtonProps) {
+export function AddToCartButton({ product, size = 'sm', className = '' }: AddToCartButtonProps) {
   const { addItem, openCart } = useCart();
   const [added, setAdded] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -24,10 +24,11 @@ export function AddToCartButton({ earring, size = 'sm', className = '' }: AddToC
 
   function handleAdd() {
     addItem({
-      id: earring.id,
-      name: earring.name,
-      price: earring.price,
-      accentColor: earring.accentColor,
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      accentColor: product.accentColor,
+      categorySlug: product.categorySlug,
     });
     setAdded(true);
     if (timer.current) clearTimeout(timer.current);
@@ -41,7 +42,7 @@ export function AddToCartButton({ earring, size = 'sm', className = '' }: AddToC
       type="button"
       onClick={handleAdd}
       onDoubleClick={openCart}
-      aria-label={`Add ${earring.name} to cart`}
+      aria-label={`Add ${product.name} to cart`}
       className={`cursor-pointer inline-flex items-center justify-center gap-1.5 font-body font-medium rounded transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 ${sizing} ${
         added ? 'bg-kraft-dark text-cream' : 'bg-kraft text-cream hover:bg-kraft-dark'
       } ${className}`}
