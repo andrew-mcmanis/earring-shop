@@ -112,19 +112,19 @@ export function CartDrawer() {
                       <button
                         onClick={() => setQty(item.id, item.qty - 1)}
                         aria-label={`Decrease quantity of ${item.name}`}
-                        className="cursor-pointer w-9 h-9 flex items-center justify-center text-ink hover:bg-cream-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft rounded-l"
+                        className="cursor-pointer w-10 h-10 flex items-center justify-center text-ink hover:bg-cream-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft rounded-l"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                           <path strokeLinecap="round" d="M5 12h14" />
                         </svg>
                       </button>
-                      <span className="w-9 text-center font-body text-sm font-medium text-ink tabular-nums" aria-live="polite">
+                      <span className="w-10 text-center font-body text-sm font-medium text-ink tabular-nums" aria-live="polite">
                         {item.qty}
                       </span>
                       <button
                         onClick={() => setQty(item.id, item.qty + 1)}
                         aria-label={`Increase quantity of ${item.name}`}
-                        className="cursor-pointer w-9 h-9 flex items-center justify-center text-ink hover:bg-cream-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft rounded-r"
+                        className="cursor-pointer w-10 h-10 flex items-center justify-center text-ink hover:bg-cream-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft rounded-r"
                       >
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                           <path strokeLinecap="round" d="M12 5v14M5 12h14" />

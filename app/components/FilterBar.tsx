@@ -166,20 +166,24 @@ export function FilterBar({
                   title={c.name}
                   aria-label={`Filter by ${c.name}${isActive ? ' (selected)' : ''}`}
                   aria-pressed={isActive}
-                  className={`cursor-pointer w-7 h-7 rounded-full border-2 transition-all duration-150 hover:scale-110 ${
-                    isActive
-                      ? 'border-kraft ring-2 ring-kraft ring-offset-1 scale-110'
-                      : 'border-transparent hover:border-kraft-light'
-                  }`}
-                  style={
-                    c.slug === 'multicolour'
-                      ? {
-                          background:
-                            'conic-gradient(#C0392B 0deg, #9B59B6 90deg, #2E6DA4 180deg, #27AE60 270deg, #C0392B 360deg)',
-                        }
-                      : { backgroundColor: c.hex }
-                  }
-                />
+                  className="group cursor-pointer w-11 h-11 flex items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+                >
+                  <span
+                    className={`block w-7 h-7 rounded-full border-2 transition-transform duration-150 group-hover:scale-110 ${
+                      isActive
+                        ? 'border-kraft ring-2 ring-kraft ring-offset-1 scale-110'
+                        : 'border-transparent group-hover:border-kraft-light'
+                    }`}
+                    style={
+                      c.slug === 'multicolour'
+                        ? {
+                            background:
+                              'conic-gradient(#C0392B 0deg, #9B59B6 90deg, #2E6DA4 180deg, #27AE60 270deg, #C0392B 360deg)',
+                          }
+                        : { backgroundColor: c.hex }
+                    }
+                  />
+                </button>
               );
             })}
           </div>
