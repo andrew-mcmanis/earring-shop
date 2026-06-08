@@ -19,19 +19,19 @@ export function Header() {
 
       <header className="sticky top-0 z-50 bg-cream border-b border-kraft-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-28">
+          <div className="flex items-center justify-between h-24 sm:h-28">
             <Link
               href="/"
               className="flex items-center hover:opacity-80 transition-opacity duration-200"
               aria-label="BLG Creations — home"
             >
               <Image
-                src="/logo/BLG_Creations_logo_clean.svg"
-                alt="BLG Creations"
-                width={160}
-                height={160}
+                src="/logo/BLG_Creations_logo_cropped.svg"
+                alt="BLG Creations — handmade jewellery & gifts"
+                width={813}
+                height={438}
                 priority
-                className="object-contain"
+                className="h-16 sm:h-20 w-auto object-contain"
               />
             </Link>
 
