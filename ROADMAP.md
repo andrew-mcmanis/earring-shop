@@ -123,8 +123,11 @@ earrings-only copy/components to cover all three categories.
 **Phase 2 — Images.** Add image field(s) + Supabase Storage; swap the
 placeholder for real `<Image>` (placeholder stays until photos arrive).
 
-**Phase 3 — Admin auth.** Supabase Auth (email + password **and** Google);
-protected `/admin` area with middleware.
+**Phase 3 — Admin auth. ✅ done.** Supabase Auth (email + password working;
+Google button present, needs the Google provider enabled in Supabase to
+function). Protected `/admin` via `middleware.ts`; branded `/admin/login`;
+dashboard shell with sign-out and Products/Orders/Labels sections. Verified:
+route protection, sign-in, and sign-out all work.
 
 **Phase 4 — Admin product + label management.** CRUD for products (create /
 edit / delete, photo upload, price, description, category/subcategory/colour,
