@@ -76,10 +76,13 @@ create policy "admin write products"      on products      for all using (auth.r
 --   RLS (above) still governs which rows each role may touch.
 -- ============================================================
 
-grant usage on schema public to anon, authenticated;
+grant usage on schema public to anon, authenticated, service_role;
 
 -- Public storefront can read labels + products
 grant select on categories, subcategories, colours, products to anon, authenticated;
 
 -- The signed-in owner (admin) can manage everything
 grant insert, update, delete on categories, subcategories, colours, products to authenticated;
+
+-- Server-side (service role) full access — needed for server tasks (e.g. orders)
+grant all on categories, subcategories, colours, products to service_role;
