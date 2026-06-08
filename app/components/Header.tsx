@@ -19,7 +19,7 @@ export function Header() {
 
       <header className="sticky top-0 z-50 bg-cream border-b border-kraft-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-24 sm:h-28">
+          <div className="flex items-center justify-between h-32 sm:h-36">
             <Link
               href="/"
               className="flex items-center hover:opacity-80 transition-opacity duration-200"
@@ -31,7 +31,7 @@ export function Header() {
                 width={813}
                 height={438}
                 priority
-                className="h-16 sm:h-20 w-auto object-contain"
+                className="h-24 sm:h-28 w-auto object-contain"
               />
             </Link>
 
