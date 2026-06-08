@@ -117,8 +117,9 @@ These shape the admin design, so worth settling before building:
 - **Orders** — should orders appear in *her* admin dashboard (likely yes, since
   Andrew is hands-off)? If so, the **ClearInvoice integration may not be needed
   at all** — or kept so completed orders also become invoices.
-- **Login method** — email + password, or "sign in with Google" (one less
-  password for her to manage)?
+- _(Resolved)_ **Login — both email + password AND Google.** Owner gets both
+  sign-in methods (Supabase Auth supports both natively). Google needs a one-off
+  Google OAuth client wired into Supabase; doesn't affect the rest of the build.
 
 ---
 
