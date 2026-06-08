@@ -21,8 +21,8 @@ const SECTIONS = [
   {
     href: '/admin/labels',
     title: 'Labels',
-    description: 'Manage categories, subcategories and colours.',
-    ready: false,
+    description: 'Manage categories, earring types and colours.',
+    ready: true,
   },
 ];
 

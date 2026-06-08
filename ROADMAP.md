@@ -142,8 +142,13 @@ route protection, sign-in, and sign-out all work.
   pages, admin list, cart and checkout, with the placeholder as fallback.
   Verified: upload → public URL → renders; placeholder still shows when no
   photo.
-- ⏳ **Labels management:** add/edit categories, subcategories, colours (name +
-  swatch).
+- ✅ **Labels management done:** `/admin/labels` — add / rename / delete
+  categories and earring types, and add / edit / delete colours (name + swatch).
+  Slugs auto-generate and stay stable on rename; deleting a category that's in
+  use is blocked with a friendly message. Changes revalidate the shop. Verified
+  live (add colour → appears in shop filter; in-use category delete blocked).
+
+**Phase 4 is complete.**
 
 **Phase 5 — Orders + Stripe payment.** _(Payment model confirmed 2026-06-08:
 pay-at-checkout via Stripe; orders shown in the shop's own admin — "option a".)_
