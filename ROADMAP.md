@@ -181,6 +181,35 @@ These shape the admin design, so worth settling before building:
 
 ---
 
+## ✅ Quality bar — apply in EVERY phase
+
+Reviewed 2026-06-08. Keep the shop and admin feeling handmade and professional,
+with zero "AI tell-tale" patterns:
+
+- **Brand consistency:** Kraft/cream/ink palette + Amatic SC / Cabin everywhere,
+  including the admin (no generic blue SaaS dashboard theme). Semantic tokens,
+  not raw hex in components.
+- **No AI tells:** no glassmorphism / `backdrop-blur`, no decorative gradients
+  (the multicolour swatch's conic-gradient is functional), minimal shadows
+  (`shadow-sm` on cards; heavier only on true overlays), squared-off
+  `rounded`/`rounded-lg` (never `rounded-full` on controls — swatches excepted,
+  they're literally round), SVG icons from one family (no emoji), human copy
+  (no filler), and **real photography in place of placeholders as soon as
+  possible** (biggest perceived-quality lever).
+- **Accessibility:** visible focus rings, `aria-label` on icon-only buttons,
+  `aria-live` on dynamic text, `role="alert"` on errors, reduced-motion honoured,
+  sequential headings, 4.5:1 contrast.
+- **Touch:** 44px minimum tap targets (swatches/steppers fixed to this).
+- **Forms:** visible labels, required markers, correct input types, validate on
+  blur + summary on submit, disabled+spinner while saving, success confirmation.
+- **Destructive actions:** confirm first, danger colour, separated from primary
+  actions, offer undo where feasible.
+- **Empty + loading states** on every list/async surface.
+- **Images (when added):** `next/image` with width/height or aspect-ratio (avoid
+  layout shift), lazy-load below the fold, descriptive `alt`, Supabase host in
+  `next.config` remotePatterns.
+- **Responsive:** mobile-first; tables become cards or scroll on mobile.
+
 ## 🔭 Strategic direction (Path 2 — later)
 
 The earring shop is **customer zero** for a potential ClearInvoice feature:
