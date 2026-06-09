@@ -167,8 +167,11 @@ pay-at-checkout via Stripe; orders shown in the shop's own admin — "option a".
   ClearInvoice as records is now optional/Path 2, superseding the earlier
   "order → draft invoice" plan.
 
-**Phase 6 — Deploy + harden.** Deploy to Vercel, wire env vars, optional custom
-domain; final validation, empty states, SEO.
+**Phase 6 — Deploy + harden. ✅ Live on Vercel** (2026-06-09) at
+`earring-shop-coral.vercel.app`, connected to Supabase (verified: serves real
+DB products). Auto-deploys on push to `main`. Remaining nice-to-haves: custom
+domain, web analytics/speed insights, and rotating the Supabase secret key in
+both `.env.local` and Vercel.
 
 ---
 
