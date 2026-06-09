@@ -238,9 +238,15 @@ needs the site **deployed** (webhooks need a public URL).
 3. Build + verify in test mode (test cards).
 4. Deploy (Phase 6) → add a prod webhook endpoint in Stripe → switch to live keys.
 
-**Decisions still needed (owner):** shipping (free / flat rate £? / collected),
-and whether Stripe also collects the delivery address (we already capture it).
-VAT: none (not registered).
+**Address handling — Option A (locked 2026-06-09):** our checkout form collects
+the delivery address (as now); the Stripe Checkout Session does **not** collect
+a shipping address (`shipping_address_collection` off), so it's never entered
+twice. Stripe may still ask for the card's billing postcode via
+`billing_address_collection: 'auto'` — that's a normal card check, not the
+delivery address. The full order (incl. address) is saved before payment.
+
+**Decisions still needed (owner):** shipping (free / flat rate £? / arranged
+separately). VAT: none (not registered).
 
 ## ✅ Quality bar — apply in EVERY phase
 
