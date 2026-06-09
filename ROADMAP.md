@@ -202,35 +202,45 @@ These shape the admin design, so worth settling before building:
 
 ## 💳 Stripe payment plan (Phase 5b — when ready)
 
-Model: **single merchant** (owner's own Stripe account, not Connect), **pay at
-checkout** via Stripe-hosted Checkout, **GBP**. Orders already persist; this
-layers payment on top. Build/test in **Stripe test mode** first; live payment
-needs the site **deployed** (webhooks need a public URL).
+Model: **single merchant** (owner's own Stripe account, not Connect), **pay
+on-site** via the **embedded Stripe Payment Element** — Option 2, locked
+2026-06-09 (no redirect to Stripe; card entered inline, styled to match the
+shop). **GBP.** Card data lives in Stripe's iframe so we never touch it (PCI
+SAQ A). Orders already persist; this layers payment on top. Build/test in
+**Stripe test mode** first; live payment needs the site **deployed** (webhooks
+need a public URL).
 
 **Data model — migration `0004_order_payments.sql`:**
 - Add to `orders`: `payment_status` ('unpaid'|'paid'|'refunded', default
-  'unpaid'), `stripe_session_id`, `stripe_payment_intent`, `paid_at`.
+  'unpaid'), `stripe_payment_intent`, `paid_at`.
 - Keep fulfilment `status` (new/made/posted) separate from payment status.
 
 **Flow:**
-1. Checkout submit → `placeOrder` creates the order (payment_status 'unpaid')
-   **and** a Stripe **Checkout Session** (server-side, secret key) with the line
-   items (GBP, pence), `customer_email`, `metadata.order_id`, success/cancel
-   URLs. Returns the session URL; the client redirects to Stripe.
-2. Customer pays on Stripe's hosted page → back to `/checkout/success`.
+1. Checkout page collects details (incl. address — Option A) and renders the
+   **Payment Element**. Server creates the order (payment_status 'unpaid') **and**
+   a **PaymentIntent** (amount in GBP pence, `metadata.order_id`,
+   automatic_payment_methods on); returns the `client_secret`.
+2. Customer enters their card in the inline element → client calls
+   `stripe.confirmPayment({ clientSecret, confirmParams:{ return_url },
+   redirect:'if_required' })`. 3-D Secure shows inline/modal only if the bank
+   requires it. On success → show confirmation.
 3. Webhook `POST /api/stripe/webhook` (verifies signature) handles
-   `checkout.session.completed` → marks the order `paid` + `paid_at` (service
-   role). Success page can also retrieve the session for instant confirmation.
+   `payment_intent.succeeded` → marks the order `paid` + `paid_at` (service
+   role). The webhook is the source of truth; the client result is just UX.
 
 **Build steps:**
-- `npm i stripe`; `app/lib/stripe.ts` (server client, secret key).
+- `npm i stripe @stripe/stripe-js @stripe/react-stripe-js`.
+- `app/lib/stripe.ts` (server client, secret key).
 - Migration 0004 (payment columns).
-- Update `placeOrder` to create the session + return redirect URL; `CheckoutForm`
-  redirects to it.
-- `app/api/stripe/webhook/route.ts` (raw body + `stripe-signature` verify).
-- Success-page + checkout copy updates ("you'll be taken to secure checkout to
-  pay" / "Payment received"). Admin Orders: add a **Paid/Unpaid** badge.
-- Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`.
+- Server action/route to create the order + PaymentIntent and return the
+  client_secret; `CheckoutForm` wraps the card field in `<Elements>` +
+  `<PaymentElement>` and confirms with `redirect:'if_required'`.
+- `app/api/stripe/webhook/route.ts` (raw body + `stripe-signature` verify;
+  handle payment_intent.succeeded / payment_failed).
+- Success-page + checkout copy updates ("Pay securely below" / "Payment
+  received"). Admin Orders: add a **Paid / Unpaid** badge.
+- Env: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (safe to
+  expose), `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`.
 
 **Setup / order of work:**
 1. Owner creates a Stripe account → test keys.
