@@ -200,6 +200,48 @@ These shape the admin design, so worth settling before building:
 
 ---
 
+## 💳 Stripe payment plan (Phase 5b — when ready)
+
+Model: **single merchant** (owner's own Stripe account, not Connect), **pay at
+checkout** via Stripe-hosted Checkout, **GBP**. Orders already persist; this
+layers payment on top. Build/test in **Stripe test mode** first; live payment
+needs the site **deployed** (webhooks need a public URL).
+
+**Data model — migration `0004_order_payments.sql`:**
+- Add to `orders`: `payment_status` ('unpaid'|'paid'|'refunded', default
+  'unpaid'), `stripe_session_id`, `stripe_payment_intent`, `paid_at`.
+- Keep fulfilment `status` (new/made/posted) separate from payment status.
+
+**Flow:**
+1. Checkout submit → `placeOrder` creates the order (payment_status 'unpaid')
+   **and** a Stripe **Checkout Session** (server-side, secret key) with the line
+   items (GBP, pence), `customer_email`, `metadata.order_id`, success/cancel
+   URLs. Returns the session URL; the client redirects to Stripe.
+2. Customer pays on Stripe's hosted page → back to `/checkout/success`.
+3. Webhook `POST /api/stripe/webhook` (verifies signature) handles
+   `checkout.session.completed` → marks the order `paid` + `paid_at` (service
+   role). Success page can also retrieve the session for instant confirmation.
+
+**Build steps:**
+- `npm i stripe`; `app/lib/stripe.ts` (server client, secret key).
+- Migration 0004 (payment columns).
+- Update `placeOrder` to create the session + return redirect URL; `CheckoutForm`
+  redirects to it.
+- `app/api/stripe/webhook/route.ts` (raw body + `stripe-signature` verify).
+- Success-page + checkout copy updates ("you'll be taken to secure checkout to
+  pay" / "Payment received"). Admin Orders: add a **Paid/Unpaid** badge.
+- Env: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`.
+
+**Setup / order of work:**
+1. Owner creates a Stripe account → test keys.
+2. Local test: Stripe CLI `stripe listen --forward-to localhost:3000/api/stripe/webhook`.
+3. Build + verify in test mode (test cards).
+4. Deploy (Phase 6) → add a prod webhook endpoint in Stripe → switch to live keys.
+
+**Decisions still needed (owner):** shipping (free / flat rate £? / collected),
+and whether Stripe also collects the delivery address (we already capture it).
+VAT: none (not registered).
+
 ## ✅ Quality bar — apply in EVERY phase
 
 Reviewed 2026-06-08. Keep the shop and admin feeling handmade and professional,

@@ -71,7 +71,7 @@ export function CartDrawer() {
             <ProductIcon color="#D4B896" className="w-14 h-20" />
             <p className="font-heading text-3xl font-bold text-kraft-light">Your cart is empty</p>
             <p className="font-body text-sm text-ink-light max-w-xs">
-              Browse the collection and add a pair you love — it&apos;ll show up here.
+              Browse the collection and add something you love — it&apos;ll show up here.
             </p>
             <button
               onClick={closeCart}
@@ -160,7 +160,7 @@ export function CartDrawer() {
               </span>
             </div>
             <p className="font-body text-xs text-ink-light">
-              Each pair is made to order. Shipping is arranged after checkout.
+              Each piece is made to order. Shipping is arranged after checkout.
             </p>
             <Link
               href="/checkout"

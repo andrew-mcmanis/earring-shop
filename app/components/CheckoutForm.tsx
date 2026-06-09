@@ -80,7 +80,7 @@ export function CheckoutForm() {
         <ProductIcon color="#D4B896" className="w-14 h-20" />
         <h2 className="font-heading text-3xl font-bold text-kraft-light">Your cart is empty</h2>
         <p className="font-body text-sm text-ink-light max-w-xs">
-          Add a pair you love, then come back to check out.
+          Add something you love, then come back to check out.
         </p>
         <Link
           href="/"
@@ -149,7 +149,7 @@ export function CheckoutForm() {
           {isPending ? 'Placing order…' : 'Place order'}
         </button>
         <p className="font-body text-xs text-ink-light">
-          Each pair is made to order. We&apos;ll email you to confirm payment and delivery — no
+          Each piece is made to order. We&apos;ll email you to confirm payment and delivery — no
           payment is taken on this page.
         </p>
       </form>

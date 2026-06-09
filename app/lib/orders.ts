@@ -68,7 +68,7 @@ export async function placeOrder(
   }
 
   if (items.length === 0) {
-    return { status: 'error', message: 'Your cart is empty — add a pair before checking out.' };
+    return { status: 'error', message: 'Your cart is empty — add an item before checking out.' };
   }
   if (Object.keys(fieldErrors).length > 0) {
     return { status: 'error', message: 'Please check the highlighted fields.', fieldErrors };
