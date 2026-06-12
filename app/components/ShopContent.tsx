@@ -39,8 +39,9 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
     [products, selectedCategory, selectedSubcategory, selectedColour],
   );
 
+  // Category is chosen via the tabs above the grid, so the refine panel only
+  // counts subcategory + colour.
   const activeFilterCount = [
-    selectedCategory !== 'all',
     selectedSubcategory !== 'all',
     selectedColour !== 'all',
   ].filter(Boolean).length;
@@ -50,9 +51,46 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
     return categoryNameBySlug.get(p.categorySlug) ?? p.categorySlug;
   }
 
+  function selectCategory(slug: string | 'all') {
+    setSelectedCategory(slug);
+    setSelectedSubcategory('all');
+  }
+
+  const tabClass = (active: boolean) =>
+    `cursor-pointer whitespace-nowrap font-body text-sm font-medium px-4 py-2.5 rounded border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft ${
+      active
+        ? 'bg-kraft border-kraft text-cream font-semibold'
+        : 'bg-cream-dark border-kraft-light text-ink hover:border-kraft'
+    }`;
+
   return (
-    <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Mobile filter toggle bar */}
+    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+      {/* Category tabs — the primary way to browse */}
+      <div
+        className="flex gap-2 overflow-x-auto pb-1 -mb-1"
+        role="group"
+        aria-label="Browse by category"
+      >
+        <button
+          onClick={() => selectCategory('all')}
+          aria-pressed={selectedCategory === 'all'}
+          className={tabClass(selectedCategory === 'all')}
+        >
+          All Products
+        </button>
+        {categories.map((c) => (
+          <button
+            key={c.slug}
+            onClick={() => selectCategory(c.slug)}
+            aria-pressed={selectedCategory === c.slug}
+            className={tabClass(selectedCategory === c.slug)}
+          >
+            {c.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile refine toggle bar */}
       <div className="lg:hidden flex items-center justify-between">
         <button
           onClick={() => setMobileFiltersOpen((o) => !o)}
@@ -75,16 +113,15 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
         </span>
       </div>
 
-      {/* Filter panel — always visible on desktop, toggled on mobile */}
+      <div className="flex flex-col lg:flex-row gap-8">
+      {/* Refine panel — always visible on desktop, toggled on mobile */}
       <div className={mobileFiltersOpen ? 'lg:block' : 'hidden lg:block'}>
         <FilterBar
-          categories={categories}
           subcategories={subcategories}
           colours={colours}
           selectedCategory={selectedCategory}
           selectedSubcategory={selectedSubcategory}
           selectedColour={selectedColour}
-          onCategoryChange={setSelectedCategory}
           onSubcategoryChange={setSelectedSubcategory}
           onColourChange={setSelectedColour}
           resultCount={filtered.length}
@@ -113,6 +150,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }

@@ -1,15 +1,14 @@
 'use client';
 
-import type { Category, Subcategory, Colour } from '../data/types';
+import type { Subcategory, Colour } from '../data/types';
 
 interface FilterBarProps {
-  categories: Category[];
   subcategories: Subcategory[];
   colours: Colour[];
+  /** Current category (chosen via the tabs above the grid). */
   selectedCategory: string | 'all';
   selectedSubcategory: string | 'all';
   selectedColour: string | 'all';
-  onCategoryChange: (slug: string | 'all') => void;
   onSubcategoryChange: (slug: string | 'all') => void;
   onColourChange: (slug: string | 'all') => void;
   resultCount: number;
@@ -28,27 +27,24 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
 }
 
 export function FilterBar({
-  categories,
   subcategories,
   colours,
   selectedCategory,
   selectedSubcategory,
   selectedColour,
-  onCategoryChange,
   onSubcategoryChange,
   onColourChange,
   resultCount,
   onMobileClose,
 }: FilterBarProps) {
-  const hasActiveFilters =
-    selectedCategory !== 'all' || selectedSubcategory !== 'all' || selectedColour !== 'all';
+  // Category lives in the tabs above the grid; this panel only refines.
+  const hasActiveFilters = selectedSubcategory !== 'all' || selectedColour !== 'all';
 
   // Subcategories only apply to Earrings — show them only when that's selected.
   const showSubcategories = selectedCategory === 'earrings';
   const earringSubs = subcategories.filter((s) => s.categorySlug === 'earrings');
 
   function clearAll() {
-    onCategoryChange('all');
     onSubcategoryChange('all');
     onColourChange('all');
   }
@@ -72,43 +68,6 @@ export function FilterBar({
             )}
           </div>
         </div>
-
-        {/* Category */}
-        <FilterSection label="Category">
-          <div className="flex flex-col gap-1">
-            <button
-              onClick={() => {
-                onCategoryChange('all');
-                onSubcategoryChange('all');
-              }}
-              aria-pressed={selectedCategory === 'all'}
-              className={`cursor-pointer text-left font-body text-sm px-3 py-2 rounded transition-colors duration-150 ${
-                selectedCategory === 'all'
-                  ? 'bg-kraft text-cream font-semibold'
-                  : 'text-ink hover:bg-kraft-light/40'
-              }`}
-            >
-              All Products
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c.slug}
-                onClick={() => {
-                  onCategoryChange(c.slug);
-                  onSubcategoryChange('all');
-                }}
-                aria-pressed={selectedCategory === c.slug}
-                className={`cursor-pointer text-left font-body text-sm px-3 py-2 rounded transition-colors duration-150 ${
-                  selectedCategory === c.slug
-                    ? 'bg-kraft text-cream font-semibold'
-                    : 'text-ink hover:bg-kraft-light/40'
-                }`}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
-        </FilterSection>
 
         {/* Subcategory — Earrings only */}
         {showSubcategories && (
@@ -194,7 +153,7 @@ export function FilterBar({
             onClick={clearAll}
             className="cursor-pointer font-body text-xs text-kraft-dark underline underline-offset-2 hover:text-kraft transition-colors duration-150 self-start"
           >
-            Clear all filters
+            Clear filters
           </button>
         )}
       </div>

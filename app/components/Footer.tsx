@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t border-cream-dark py-8 px-4 text-center">
       <p className="font-body text-xs text-ink-light">
-        © {new Date().getFullYear()} BLG Creations · All rights reserved · Made with love
+        © {new Date().getFullYear()} BLG Creations · All rights reserved
       </p>
       <Link
         href="/admin/login"
