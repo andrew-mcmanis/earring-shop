@@ -46,7 +46,7 @@ export default async function AdminOrdersPage() {
           <div className="bg-white border border-cream-dark rounded-lg flex flex-col items-center text-center gap-3 py-16 px-6">
             <h2 className="font-heading text-2xl font-bold text-kraft-light">No orders yet</h2>
             <p className="font-body text-sm text-ink-light max-w-xs">
-              When a customer checks out, their order will appear here for you to make and post.
+              When a customer checks out, their order will appear here for you to pack and post.
             </p>
           </div>
         ) : (

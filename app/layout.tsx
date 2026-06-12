@@ -29,13 +29,13 @@ export const metadata: Metadata = {
     template: '%s · BLG Creations',
   },
   description:
-    'Handmade earrings, bookmarks and gifts — each piece made to order with love.',
+    'Earrings, bookmarks and gifts — every piece made by hand.',
   openGraph: {
     type: 'website',
     siteName: 'BLG Creations',
     title: 'BLG Creations — Handmade Jewellery & Gifts',
     description:
-      'Handmade earrings, bookmarks and gifts — each piece made to order with love.',
+      'Earrings, bookmarks and gifts — every piece made by hand.',
     locale: 'en_GB',
   },
 };

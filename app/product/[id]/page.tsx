@@ -150,7 +150,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="flex items-center gap-4 mt-4">
               <AddToCartButton product={product} size="lg" />
               <p className="font-body text-xs text-ink-light">
-                Made to order · Ships within 5–7 business days
+                Made by hand · Packed with care
               </p>
             </div>
           </div>

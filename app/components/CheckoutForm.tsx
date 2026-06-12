@@ -149,7 +149,7 @@ export function CheckoutForm() {
           {isPending ? 'Placing order…' : 'Place order'}
         </button>
         <p className="font-body text-xs text-ink-light">
-          Each piece is made to order. We&apos;ll email you to confirm payment and delivery — no
+          We&apos;ll email you to confirm payment and delivery — no
           payment is taken on this page.
         </p>
       </form>

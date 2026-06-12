@@ -35,8 +35,8 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
         )}
 
         <p className="font-body text-base text-ink-light max-w-md leading-relaxed">
-          Each piece is made to order, so we&apos;ll be in touch by email shortly to confirm the
-          details, payment and delivery. Keep an eye on your inbox.
+          We&apos;ll be in touch by email shortly to confirm payment and delivery. Keep an eye
+          on your inbox.
         </p>
 
         <Link
