@@ -67,7 +67,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
       {/* Category tabs — the primary way to browse */}
       <div
-        className="flex gap-2 overflow-x-auto pb-1 -mb-1"
+        className="flex flex-wrap gap-2"
         role="group"
         aria-label="Browse by category"
       >

@@ -22,17 +22,20 @@ export function Header() {
           <div className="flex items-center justify-between h-32 sm:h-36">
             <Link
               href="/"
-              className="flex items-center hover:opacity-80 transition-opacity duration-200"
+              className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity duration-200"
               aria-label="BLG Creations — home"
             >
               <Image
-                src="/logo/BLG_Creations_logo_cropped.svg"
-                alt="BLG Creations — handmade jewellery & gifts"
-                width={813}
-                height={438}
+                src="/logo/BLG_Creations_wordmark.svg"
+                alt="BLG Creations"
+                width={785}
+                height={352}
                 priority
-                className="h-24 sm:h-28 w-auto object-contain"
+                className="h-20 sm:h-24 w-auto object-contain"
               />
+              <span className="font-body text-[10px] sm:text-xs font-medium tracking-[0.22em] text-ink-light uppercase">
+                Handmade Jewellery &amp; Gifts
+              </span>
             </Link>
 
             {/* Cart */}
