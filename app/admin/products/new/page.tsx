@@ -4,7 +4,7 @@ import { getCategories, getSubcategories, getColours } from '../../../data/produ
 import { ProductForm } from '../ProductForm';
 import { createProduct } from '../actions';
 
-export const metadata = { title: 'Add product · Admin · BLG Creations' };
+export const metadata = { title: 'Add product · Admin' };
 
 export default async function NewProductPage() {
   const [categories, subcategories, colours] = await Promise.all([

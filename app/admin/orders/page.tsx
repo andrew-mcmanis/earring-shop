@@ -4,7 +4,7 @@ import { adminGetOrders } from './queries';
 import { OrderStatusControl } from './OrderStatusControl';
 import type { OrderStatus } from '../../data/types';
 
-export const metadata = { title: 'Orders · Admin · BLG Creations' };
+export const metadata = { title: 'Orders · Admin' };
 
 const STATUS_STYLES: Record<OrderStatus, { label: string; dot: string; chip: string }> = {
   new: { label: 'New', dot: 'bg-kraft', chip: 'bg-kraft/10 text-kraft-dark border-kraft-light' },

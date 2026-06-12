@@ -32,6 +32,12 @@ body {
   font-family: var(--font-body);
 }
 
+/* Brand-toned text selection */
+::selection {
+  background: var(--kraft);
+  color: var(--cream);
+}
+
 /* Respect users who prefer reduced motion — neutralize transitions,
    transforms and animations without removing focus visibility. */
 @media (prefers-reduced-motion: reduce) {

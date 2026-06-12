@@ -53,5 +53,5 @@ export const sampleProducts: Product[] = [
   // — Gifts —
   { id: '16', name: 'Ceramic Trinket Dish', price: 18, categorySlug: 'gifts', subcategorySlug: null, colourSlug: 'white', description: 'A hand-painted ceramic trinket dish — perfect for rings and earrings.', accentColor: '#C8B99A', image: null, visible: true, sortOrder: 16 },
   { id: '17', name: 'Soy Wax Melts (Set)', price: 9, categorySlug: 'gifts', subcategorySlug: null, colourSlug: 'purple', description: 'A set of hand-poured soy wax melts with a soft floral scent.', accentColor: '#9B59B6', image: null, visible: true, sortOrder: 17 },
-  { id: '18', name: 'Mini Gift Bundle', price: 25, categorySlug: 'gifts', subcategorySlug: null, colourSlug: 'multicolour', description: 'A curated little bundle — a surprise mix of small handmade pieces.', accentColor: '#B5865A', image: null, visible: true, sortOrder: 18 },
+  { id: '18', name: 'Mini Gift Bundle', price: 25, categorySlug: 'gifts', subcategorySlug: null, colourSlug: 'multicolour', description: 'A surprise mix of small handmade pieces, picked and wrapped by hand.', accentColor: '#B5865A', image: null, visible: true, sortOrder: 18 },
 ];

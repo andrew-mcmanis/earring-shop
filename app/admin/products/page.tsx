@@ -7,7 +7,7 @@ import { adminGetProducts } from './queries';
 import { DeleteProductButton } from './DeleteProductButton';
 import { VisibilityToggle } from './VisibilityToggle';
 
-export const metadata = { title: 'Products · Admin · BLG Creations' };
+export const metadata = { title: 'Products · Admin' };
 
 export default async function AdminProductsPage() {
   const [products, categories, subcategories, colours] = await Promise.all([

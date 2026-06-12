@@ -5,7 +5,7 @@ import { Footer } from '../components/Footer';
 import { CheckoutForm } from '../components/CheckoutForm';
 
 export const metadata: Metadata = {
-  title: 'Checkout · BLG Creations',
+  title: 'Checkout',
 };
 
 export default function CheckoutPage() {

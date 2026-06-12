@@ -27,11 +27,11 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const product = await getProduct(id);
 
   if (!product) {
-    return { title: 'Not Found · BLG Creations' };
+    return { title: 'Not Found' };
   }
 
   return {
-    title: `${product.name} · BLG Creations`,
+    title: product.name,
     description: product.description,
   };
 }

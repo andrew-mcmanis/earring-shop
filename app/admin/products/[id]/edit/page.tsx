@@ -6,7 +6,7 @@ import { adminGetProduct } from '../../queries';
 import { ProductForm } from '../../ProductForm';
 import { updateProduct } from '../../actions';
 
-export const metadata = { title: 'Edit product · Admin · BLG Creations' };
+export const metadata = { title: 'Edit product · Admin' };
 
 interface EditPageProps {
   params: Promise<{ id: string }>;

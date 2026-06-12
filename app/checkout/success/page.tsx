@@ -4,7 +4,7 @@ import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Order received · BLG Creations',
+  title: 'Order received',
 };
 
 interface SuccessPageProps {

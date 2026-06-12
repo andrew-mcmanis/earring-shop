@@ -50,6 +50,6 @@ select * from (values
   ('Gold Leaf Bookmark',      'A brushed gold-tone metal bookmark with a delicate leaf motif.',        14.00, 'bookmarks', null,     'gold',        '#D4A853', 15),
   ('Ceramic Trinket Dish',    'A hand-painted ceramic trinket dish — perfect for rings and earrings.', 18.00, 'gifts',     null,     'white',       '#C8B99A', 16),
   ('Soy Wax Melts (Set)',     'A set of hand-poured soy wax melts with a soft floral scent.',           9.00, 'gifts',     null,     'purple',      '#9B59B6', 17),
-  ('Mini Gift Bundle',        'A curated little bundle — a surprise mix of small handmade pieces.',     25.00, 'gifts',     null,     'multicolour', '#B5865A', 18)
+  ('Mini Gift Bundle',        'A surprise mix of small handmade pieces, picked and wrapped by hand.',     25.00, 'gifts',     null,     'multicolour', '#B5865A', 18)
 ) as v(name, description, price, category_slug, subcategory_slug, colour_slug, accent_color, sort_order)
 where not exists (select 1 from products);

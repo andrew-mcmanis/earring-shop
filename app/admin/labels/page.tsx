@@ -3,7 +3,7 @@ import { AdminHeader } from '../AdminHeader';
 import { getCategories, getSubcategories, getColours } from '../../data/products';
 import { LabelsManager } from './LabelsManager';
 
-export const metadata = { title: 'Labels · Admin · BLG Creations' };
+export const metadata = { title: 'Labels · Admin' };
 
 export default async function LabelsPage() {
   const [categories, subcategories, colours] = await Promise.all([

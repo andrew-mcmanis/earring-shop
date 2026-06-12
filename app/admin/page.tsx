@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { createServerSupabase } from '../lib/supabase-server';
 import { signOut } from './actions';
 
-export const metadata = { title: 'Admin · BLG Creations' };
+export const metadata = { title: 'Admin' };
 
 const SECTIONS = [
   {

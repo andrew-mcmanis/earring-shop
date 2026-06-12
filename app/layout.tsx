@@ -1,8 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Amatic_SC, Cabin } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from './components/CartProvider';
 import { CartDrawer } from './components/CartDrawer';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
 const amaticSC = Amatic_SC({
   weight: ['400', '700'],
@@ -19,9 +23,25 @@ const cabin = Cabin({
 });
 
 export const metadata: Metadata = {
-  title: 'BLG Creations',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'BLG Creations — Handmade Jewellery & Gifts',
+    template: '%s · BLG Creations',
+  },
   description:
-    'Handmade earrings, bookmarks and gifts — each piece crafted to order with love.',
+    'Handmade earrings, bookmarks and gifts — each piece made to order with love.',
+  openGraph: {
+    type: 'website',
+    siteName: 'BLG Creations',
+    title: 'BLG Creations — Handmade Jewellery & Gifts',
+    description:
+      'Handmade earrings, bookmarks and gifts — each piece made to order with love.',
+    locale: 'en_GB',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#FDF8F0',
 };
 
 export default function RootLayout({
@@ -31,7 +51,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-GB"
       className={`${amaticSC.variable} ${cabin.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream text-ink">
