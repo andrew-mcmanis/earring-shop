@@ -19,10 +19,10 @@ export function Header() {
 
       <header className="sticky top-0 z-50 bg-cream border-b border-kraft-light">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-32 sm:h-36">
+          <div className="flex items-center justify-between gap-4 py-3 sm:py-4">
             <Link
               href="/"
-              className="flex flex-col items-center gap-1 hover:opacity-80 transition-opacity duration-200"
+              className="flex flex-col items-start gap-1 hover:opacity-80 transition-opacity duration-200"
               aria-label="BLG Creations — home"
             >
               <Image
@@ -31,9 +31,9 @@ export function Header() {
                 width={785}
                 height={352}
                 priority
-                className="h-20 sm:h-24 w-auto object-contain"
+                className="h-14 sm:h-20 w-auto object-contain"
               />
-              <span className="font-body text-[10px] sm:text-xs font-medium tracking-[0.22em] text-ink-light uppercase">
+              <span className="font-body text-[10px] sm:text-xs font-medium tracking-[0.2em] text-ink-light uppercase">
                 Handmade Jewellery &amp; Gifts
               </span>
             </Link>

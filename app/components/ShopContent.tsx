@@ -76,7 +76,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
           aria-pressed={selectedCategory === 'all'}
           className={tabClass(selectedCategory === 'all')}
         >
-          All Products
+          All
         </button>
         {categories.map((c) => (
           <button
