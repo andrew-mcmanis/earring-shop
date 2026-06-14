@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useRef,
   useState,
 } from 'react';
 import { getUnavailableProductIds } from '../lib/availability';
@@ -79,6 +80,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
+  const availabilityRequest = useRef(0);
 
   // Load any persisted cart once on mount (client-only API).
   useEffect(() => {
@@ -117,15 +119,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAvailability = useCallback(async () => {
     const ids = items.map((i) => i.id);
+    const requestId = ++availabilityRequest.current;
     if (ids.length === 0) {
       setUnavailableIds(new Set());
       return;
     }
     try {
       const unavailable = await getUnavailableProductIds(ids);
-      setUnavailableIds(new Set(unavailable));
+      if (requestId === availabilityRequest.current) {
+        setUnavailableIds(new Set(unavailable));
+      }
     } catch {
-      setUnavailableIds(new Set());
+      if (requestId === availabilityRequest.current) {
+        setUnavailableIds(new Set());
+      }
     }
   }, [items]);
 
