@@ -54,17 +54,29 @@ export async function placeOrder(
 
   const catalogue = await getProducts();
   const items: OrderLine[] = [];
+  const soldOutNames: string[] = [];
   for (const entry of cart) {
     const product = catalogue.find((p) => p.id === entry?.id);
     const quantity = Math.max(0, Math.floor(Number(entry?.qty) || 0));
-    if (product && quantity > 0) {
-      items.push({
-        productId: product.id,
-        name: product.name,
-        unitPrice: product.price,
-        quantity,
-      });
+    if (!product || quantity <= 0) continue;
+    if (product.soldOut) {
+      soldOutNames.push(product.name);
+      continue;
     }
+    items.push({
+      productId: product.id,
+      name: product.name,
+      unitPrice: product.price,
+      quantity,
+    });
+  }
+
+  if (soldOutNames.length > 0) {
+    const these = soldOutNames.length > 1 ? 'them' : 'it';
+    return {
+      status: 'error',
+      message: `Sorry, ${soldOutNames.join(', ')} just sold out — please remove ${these} from your cart to continue.`,
+    };
   }
 
   if (items.length === 0) {
