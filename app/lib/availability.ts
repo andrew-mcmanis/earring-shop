@@ -32,9 +32,14 @@ export async function getUnavailableProductIds(ids: string[]): Promise<string[]>
       );
       return unique.filter((id) => !orderable.has(id));
     }
-    // On query failure, don't block the customer — fall through to the sample set.
+    // Configured DB but the query failed (e.g. column missing pre-migration, or a
+    // transient error). Don't block the customer — the placeOrder server guard is
+    // the authoritative backstop. The sample fallback below is keyed by sample IDs
+    // which never match real DB UUIDs, so it must NOT run here.
+    return [];
   }
 
+  // Unconfigured / demo mode only: cart IDs are the sample IDs.
   const orderable = new Set(
     sampleProducts.filter((p) => p.visible && !p.soldOut).map((p) => p.id),
   );

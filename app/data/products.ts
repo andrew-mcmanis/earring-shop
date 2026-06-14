@@ -26,7 +26,7 @@ export interface ProductRow {
   accent_color: string;
   image_url: string | null;
   visible: boolean;
-  sold_out: boolean;
+  sold_out: boolean | null;
   sort_order: number;
 }
 
