@@ -40,7 +40,7 @@ export function ProductCard({ product, badge, colour }: ProductCardProps) {
         )}
       </Link>
 
-      <div className="flex flex-col gap-1 p-4 border-t border-cream-dark">
+      <div className="flex flex-col gap-1 p-4 border-t border-cream-dark flex-1">
         <h3 className="font-heading text-2xl font-bold text-ink leading-tight">
           <Link
             href={`/product/${product.id}`}
@@ -56,7 +56,7 @@ export function ProductCard({ product, badge, colour }: ProductCardProps) {
           {product.description}
         </p>
 
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-auto pt-3">
           <span className="font-body text-lg font-semibold text-ink tabular-nums">
             £{product.price.toFixed(2)}
           </span>
