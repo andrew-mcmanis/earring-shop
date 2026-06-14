@@ -32,6 +32,12 @@ export function ProductCard({ product, badge, colour }: ProductCardProps) {
         <span className="absolute top-3 left-3 z-10 bg-cream text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-cream-dark">
           {badge}
         </span>
+
+        {product.soldOut && (
+          <span className="absolute top-3 right-3 z-10 bg-ink/85 text-cream text-xs font-body font-medium px-2 py-0.5 rounded">
+            Sold out
+          </span>
+        )}
       </Link>
 
       <div className="flex flex-col gap-1 p-4 border-t border-cream-dark">

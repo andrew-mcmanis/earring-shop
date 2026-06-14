@@ -122,6 +122,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
               £{product.price.toFixed(2)}
             </p>
 
+            {product.soldOut && (
+              <span className="inline-flex w-fit items-center bg-ink/85 text-cream text-xs font-body font-medium px-2.5 py-1 rounded">
+                Sold out
+              </span>
+            )}
+
             <p className="font-body text-base text-ink-light leading-relaxed max-w-prose">
               {product.description}
             </p>

@@ -38,6 +38,17 @@ export function AddToCartButton({ product, size = 'sm', className = '' }: AddToC
 
   const sizing = size === 'lg' ? 'text-sm px-6 py-3' : 'text-sm px-4 py-2';
 
+  if (product.soldOut) {
+    return (
+      <span
+        aria-disabled="true"
+        className={`inline-flex items-center justify-center font-body font-medium rounded bg-cream-dark text-ink-light cursor-not-allowed ${sizing} ${className}`}
+      >
+        Sold out
+      </span>
+    );
+  }
+
   return (
     <button
       type="button"
