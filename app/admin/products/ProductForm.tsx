@@ -213,6 +213,21 @@ export function ProductForm({
         </span>
       </label>
 
+      <label className="flex items-center gap-2.5 cursor-pointer">
+        <input
+          type="checkbox"
+          name="sold_out"
+          defaultChecked={product?.soldOut ?? false}
+          className="h-4 w-4 accent-kraft cursor-pointer"
+        />
+        <span className="font-body text-sm text-ink">
+          Sold out
+          <span className="block text-xs text-ink-light">
+            Keeps it on display but customers can&apos;t order it.
+          </span>
+        </span>
+      </label>
+
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"

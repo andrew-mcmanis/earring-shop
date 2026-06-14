@@ -58,6 +58,7 @@ async function parseProduct(formData: FormData): Promise<
   let subcategorySlug: string | null = str(formData, 'subcategory_slug') || null;
   const colourSlug: string | null = str(formData, 'colour_slug') || null;
   const visible = formData.get('visible') != null;
+  const soldOut = formData.get('sold_out') != null;
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = 'Please enter a name.';
@@ -106,6 +107,7 @@ async function parseProduct(formData: FormData): Promise<
       accent_color: accentColor,
       image_url: imageUrl,
       visible,
+      sold_out: soldOut,
     },
   };
 }
@@ -172,4 +174,12 @@ export async function toggleVisibility(id: string, visible: boolean): Promise<vo
   await supabase.from('products').update({ visible }).eq('id', id);
   revalidatePath('/admin/products');
   revalidatePath('/');
+}
+
+export async function toggleSoldOut(id: string, soldOut: boolean): Promise<void> {
+  const supabase = await requireUser();
+  await supabase.from('products').update({ sold_out: soldOut }).eq('id', id);
+  revalidatePath('/admin/products');
+  revalidatePath('/');
+  revalidatePath(`/product/${id}`);
 }

@@ -6,6 +6,7 @@ import { getCategories, getSubcategories, getColours } from '../../data/products
 import { adminGetProducts } from './queries';
 import { DeleteProductButton } from './DeleteProductButton';
 import { VisibilityToggle } from './VisibilityToggle';
+import { SoldOutToggle } from './SoldOutToggle';
 
 export const metadata = { title: 'Products · Admin' };
 
@@ -100,6 +101,7 @@ export default async function AdminProductsPage() {
                   </span>
 
                   <VisibilityToggle id={p.id} visible={p.visible} />
+                  <SoldOutToggle id={p.id} soldOut={p.soldOut} />
 
                   <div className="flex items-center gap-3">
                     <Link
