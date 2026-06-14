@@ -26,6 +26,7 @@ export interface ProductRow {
   accent_color: string;
   image_url: string | null;
   visible: boolean;
+  sold_out: boolean;
   sort_order: number;
 }
 
@@ -41,6 +42,7 @@ export function mapProduct(row: ProductRow): Product {
     accentColor: row.accent_color ?? '#B5865A',
     image: row.image_url,
     visible: row.visible,
+    soldOut: row.sold_out ?? false,
     sortOrder: row.sort_order ?? 0,
   };
 }

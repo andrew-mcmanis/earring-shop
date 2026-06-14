@@ -39,6 +39,7 @@ create table if not exists products (
   accent_color     text not null default '#B5865A',  -- placeholder tint
   image_url        text,                              -- null = show placeholder
   visible          boolean not null default true,
+  sold_out         boolean not null default false,
   sort_order       int not null default 0,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
@@ -46,6 +47,7 @@ create table if not exists products (
 
 create index if not exists products_category_idx on products(category_slug);
 create index if not exists products_visible_idx  on products(visible);
+create index if not exists products_sold_out_idx on products(sold_out);
 
 -- ============================================================
 -- Row Level Security

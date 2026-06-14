@@ -64,5 +64,7 @@ export interface Product {
   /** Public URL of the product photo, or null to show the placeholder. */
   image: string | null;
   visible: boolean;
+  /** Sold out: stays on display but cannot be ordered. */
+  soldOut: boolean;
   sortOrder: number;
 }
