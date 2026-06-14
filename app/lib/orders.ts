@@ -71,19 +71,19 @@ export async function placeOrder(
     });
   }
 
-  if (soldOutNames.length > 0) {
-    const these = soldOutNames.length > 1 ? 'them' : 'it';
-    return {
-      status: 'error',
-      message: `Sorry, ${soldOutNames.join(', ')} just sold out — please remove ${these} from your cart to continue.`,
-    };
-  }
-
-  if (items.length === 0) {
-    return { status: 'error', message: 'Your cart is empty — add an item before checking out.' };
-  }
   if (Object.keys(fieldErrors).length > 0) {
     return { status: 'error', message: 'Please check the highlighted fields.', fieldErrors };
+  }
+  if (soldOutNames.length > 0) {
+    const names = [...new Set(soldOutNames)];
+    const pronoun = names.length > 1 ? 'them' : 'it';
+    return {
+      status: 'error',
+      message: `Sorry, ${names.join(', ')} just sold out — please remove ${pronoun} from your cart to continue.`,
+    };
+  }
+  if (items.length === 0) {
+    return { status: 'error', message: 'Your cart is empty — add an item before checking out.' };
   }
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
