@@ -229,11 +229,28 @@ need a public URL).
    requires it. On success → show confirmation.
 3. Webhook `POST /api/stripe/webhook` (verifies signature) handles
    `payment_intent.succeeded` → marks the order `paid` + `paid_at` (service
-   role). The webhook is the source of truth; the client result is just UX.
+   role) **and sends the customer confirmation email** (see below). The webhook
+   is the source of truth; the client result is just UX.
+
+**Order confirmation emails (decided 2026-06-13 — built WITH Stripe, not before).**
+- **Customer email fires only on payment success** — sent from the webhook
+  (`payment_intent.succeeded`), never at order placement, so we never confirm an
+  unpaid order. Contains reference (`BLG-n`), items, total, delivery address.
+- **Owner notification** (your sister) — "new order" alert. Open question: fire
+  on payment success too (cleanest — only paid orders), or at placement. Default
+  to **payment success** for consistency unless she wants earlier visibility.
+- **Resend** for delivery (Vercel-native; already used in ClearInvoice). Needs
+  `RESEND_API_KEY` + a **verified sender domain** (ties into the custom-domain
+  decision — until a domain is verified, use Resend's onboarding/test sender).
+- **Resilient + non-blocking:** an email failure must never break payment
+  handling — wrap in try/catch and log (the order is already saved + paid).
+- Plain, on-brand HTML templates (no flowery copy).
 
 **Build steps:**
 - `npm i stripe @stripe/stripe-js @stripe/react-stripe-js`.
 - `app/lib/stripe.ts` (server client, secret key).
+- `app/lib/email.ts` (Resend client + order-confirmation template), called from
+  the webhook on `payment_intent.succeeded`.
 - Migration 0004 (payment columns).
 - Server action/route to create the order + PaymentIntent and return the
   client_secret; `CheckoutForm` wraps the card field in `<Elements>` +
@@ -243,7 +260,7 @@ need a public URL).
 - Success-page + checkout copy updates ("Pay securely below" / "Payment
   received"). Admin Orders: add a **Paid / Unpaid** badge.
 - Env: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (safe to
-  expose), `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`.
+  expose), `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`, `RESEND_API_KEY`.
 
 **Setup / order of work:**
 1. Owner creates a Stripe account → test keys.
