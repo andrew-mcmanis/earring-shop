@@ -8,6 +8,7 @@ import {
   useReducer,
   useState,
 } from 'react';
+import { getUnavailableProductIds } from '../lib/availability';
 
 export interface CartItem {
   id: string;
@@ -64,6 +65,8 @@ interface CartContextValue {
   setQty: (id: string, qty: number) => void;
   removeItem: (id: string) => void;
   clear: () => void;
+  unavailableIds: Set<string>;
+  refreshAvailability: () => Promise<void>;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -75,6 +78,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, dispatch] = useReducer(reducer, []);
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
 
   // Load any persisted cart once on mount (client-only API).
   useEffect(() => {
@@ -111,6 +115,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const openCart = useCallback(() => setIsOpen(true), []);
   const closeCart = useCallback(() => setIsOpen(false), []);
 
+  const refreshAvailability = useCallback(async () => {
+    const ids = items.map((i) => i.id);
+    if (ids.length === 0) {
+      setUnavailableIds(new Set());
+      return;
+    }
+    try {
+      const unavailable = await getUnavailableProductIds(ids);
+      setUnavailableIds(new Set(unavailable));
+    } catch {
+      setUnavailableIds(new Set());
+    }
+  }, [items]);
+
+  // Re-check availability whenever the cart opens (and when items change
+  // while it is open). The localStorage snapshot may be stale.
+  useEffect(() => {
+    if (isOpen) void refreshAvailability();
+  }, [isOpen, refreshAvailability]);
+
   const totalCount = items.reduce((n, i) => n + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.qty, 0);
 
@@ -124,6 +148,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setQty,
         removeItem,
         clear,
+        unavailableIds,
+        refreshAvailability,
         isOpen,
         openCart,
         closeCart,

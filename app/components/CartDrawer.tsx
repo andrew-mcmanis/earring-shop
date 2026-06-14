@@ -7,7 +7,8 @@ import { ProductIcon } from './ProductIcon';
 import { ProductImage } from './ProductImage';
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, setQty, removeItem, clear, totalCount, totalPrice } = useCart();
+  const { items, isOpen, closeCart, setQty, removeItem, clear, totalCount, totalPrice, unavailableIds } = useCart();
+  const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   // While open: focus the close button, close on Escape, and lock body scroll.
@@ -144,6 +145,12 @@ export function CartDrawer() {
                       £{(item.price * item.qty).toFixed(2)}
                     </span>
                   </div>
+
+                  {unavailableIds.has(item.id) && (
+                    <p className="font-body text-xs text-ink mt-2" role="alert">
+                      Sold out — remove to continue.
+                    </p>
+                  )}
                 </div>
               </li>
             ))}
@@ -162,13 +169,22 @@ export function CartDrawer() {
             <p className="font-body text-xs text-ink-light">
               Shipping is arranged after checkout.
             </p>
-            <Link
-              href="/checkout"
-              onClick={closeCart}
-              className="text-center cursor-pointer bg-kraft text-cream font-body text-sm font-semibold px-5 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2"
-            >
-              Checkout
-            </Link>
+            {hasUnavailable ? (
+              <span
+                aria-disabled="true"
+                className="text-center font-body text-sm font-semibold px-5 py-3 rounded bg-cream-dark text-ink-light cursor-not-allowed"
+              >
+                Remove sold-out items to checkout
+              </span>
+            ) : (
+              <Link
+                href="/checkout"
+                onClick={closeCart}
+                className="text-center cursor-pointer bg-kraft text-cream font-body text-sm font-semibold px-5 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2"
+              >
+                Checkout
+              </Link>
+            )}
             <button
               onClick={clear}
               className="cursor-pointer font-body text-xs text-ink-light hover:text-kraft underline underline-offset-2 transition-colors duration-150 self-center"

@@ -55,7 +55,7 @@ function Field({
 }
 
 export function CheckoutForm() {
-  const { items, totalPrice, totalCount, clear } = useCart();
+  const { items, totalPrice, totalCount, clear, unavailableIds, refreshAvailability } = useCart();
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(placeOrder, initialState);
 
@@ -67,6 +67,13 @@ export function CheckoutForm() {
       router.push(`/checkout/success${q}`);
     }
   }, [state, clear, router]);
+
+  // Re-check availability when the checkout loads and whenever the cart changes.
+  useEffect(() => {
+    void refreshAvailability();
+  }, [refreshAvailability]);
+
+  const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
 
   if (state.status === 'success') {
     return (
@@ -143,10 +150,10 @@ export function CheckoutForm() {
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || hasUnavailable}
           className="bg-kraft text-cream font-body text-sm font-semibold px-6 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed self-start"
         >
-          {isPending ? 'Placing order…' : 'Place order'}
+          {isPending ? 'Placing order…' : hasUnavailable ? 'Remove sold-out items to continue' : 'Place order'}
         </button>
         <p className="font-body text-xs text-ink-light">
           We&apos;ll email you to confirm payment and delivery — no
@@ -179,6 +186,11 @@ export function CheckoutForm() {
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-sm font-medium text-ink leading-tight">{item.name}</p>
                   <p className="font-body text-xs text-ink-light">Qty {item.qty}</p>
+                  {unavailableIds.has(item.id) && (
+                    <p className="font-body text-xs text-ink" role="alert">
+                      Sold out — remove to continue.
+                    </p>
+                  )}
                 </div>
                 <span className="font-body text-sm font-semibold text-ink tabular-nums">
                   £{(item.price * item.qty).toFixed(2)}
