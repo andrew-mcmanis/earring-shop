@@ -5,6 +5,7 @@ import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer';
 import { ProductImage } from '../../components/ProductImage';
 import { AddToCartButton } from '../../components/AddToCartButton';
+import { ProductGallery } from './ProductGallery';
 import {
   getProduct,
   getProducts,
@@ -84,20 +85,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-10">
-          {/* Image */}
-          <div
-            className="relative overflow-hidden w-full lg:w-1/2 aspect-square rounded-lg border border-cream-dark flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${product.accentColor}12` }}
-          >
-            <ProductImage
-              image={product.image}
-              accentColor={product.accentColor}
-              category={product.categorySlug}
-              alt={product.name}
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              iconClassName="w-40 h-60"
-            />
-          </div>
+          {/* Image gallery */}
+          <ProductGallery
+            images={product.images}
+            alt={product.name}
+            accentColor={product.accentColor}
+            category={product.categorySlug}
+          />
 
           {/* Details */}
           <div className="flex flex-col gap-4 lg:w-1/2">
