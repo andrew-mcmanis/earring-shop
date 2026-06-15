@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '../../lib/supabase-server';
 import { createServiceClient } from '../../lib/supabase';
+import { MAX_PRODUCT_PHOTOS } from '../../data/types';
 
 const BUCKET = 'product-images';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -82,18 +83,49 @@ async function parseProduct(formData: FormData): Promise<
     if (colour?.hex) accentColor = colour.hex;
   }
 
-  // Image: upload a new file, remove the existing one, or keep what's there.
-  let imageUrl: string | null = str(formData, 'current_image') || null;
-  const file = formData.get('image');
-  if (file instanceof File && file.size > 0) {
-    const res = await uploadImage(file);
-    if ('error' in res) {
-      return { ok: false, state: { status: 'error', message: res.error, fieldErrors: { image: res.error } } };
+  // Photos: an ordered token list ('image_order') plus the new files ('new_image').
+  // Each token is either an existing public URL (kept) or 'new:i' (upload newFiles[i]).
+  const orderRaw = str(formData, 'image_order');
+  let order: string[] = [];
+  if (orderRaw) {
+    try {
+      const parsed = JSON.parse(orderRaw);
+      if (Array.isArray(parsed)) order = parsed.filter((t): t is string => typeof t === 'string');
+    } catch {
+      order = [];
     }
-    imageUrl = res.url;
-  } else if (formData.get('remove_image') != null) {
-    imageUrl = null;
   }
+  const newFiles = formData
+    .getAll('new_image')
+    .filter((f): f is File => f instanceof File && f.size > 0);
+
+  if (order.length > MAX_PRODUCT_PHOTOS) {
+    return {
+      ok: false,
+      state: {
+        status: 'error',
+        message: `You can add up to ${MAX_PRODUCT_PHOTOS} photos.`,
+        fieldErrors: { image: `Up to ${MAX_PRODUCT_PHOTOS} photos.` },
+      },
+    };
+  }
+
+  const imageUrls: string[] = [];
+  for (const token of order) {
+    if (token.startsWith('new:')) {
+      const idx = Number(token.slice(4));
+      const f = newFiles[idx];
+      if (!f) continue;
+      const res = await uploadImage(f);
+      if ('error' in res) {
+        return { ok: false, state: { status: 'error', message: res.error, fieldErrors: { image: res.error } } };
+      }
+      imageUrls.push(res.url);
+    } else {
+      imageUrls.push(token);
+    }
+  }
+  const imageUrl = imageUrls[0] ?? null;
 
   return {
     ok: true,
@@ -106,6 +138,7 @@ async function parseProduct(formData: FormData): Promise<
       colour_slug: colourSlug,
       accent_color: accentColor,
       image_url: imageUrl,
+      image_urls: imageUrls,
       visible,
       sold_out: soldOut,
     },
