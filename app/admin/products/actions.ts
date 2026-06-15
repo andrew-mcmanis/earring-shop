@@ -95,9 +95,9 @@ async function parseProduct(formData: FormData): Promise<
       order = [];
     }
   }
-  const newFiles = formData
-    .getAll('new_image')
-    .filter((f): f is File => f instanceof File && f.size > 0);
+  // Keep every appended File (no size pre-filter) so newFiles stays positionally
+  // aligned with the client's `new:i` tokens; uploadImage validates each one.
+  const newFiles = formData.getAll('new_image').filter((f): f is File => f instanceof File);
 
   if (order.length > MAX_PRODUCT_PHOTOS) {
     return {
@@ -122,6 +122,8 @@ async function parseProduct(formData: FormData): Promise<
       }
       imageUrls.push(res.url);
     } else {
+      // Existing URL kept as-is. This action is owner-only (requireUser), so the
+      // token is trusted; revisit if a lower-trust admin role is ever added.
       imageUrls.push(token);
     }
   }
