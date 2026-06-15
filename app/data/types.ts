@@ -73,3 +73,6 @@ export interface Product {
 
 /** Maximum photos a product may have (admin + server both enforce this). */
 export const MAX_PRODUCT_PHOTOS = 6;
+
+/** Maximum size per uploaded photo, in bytes (8 MB). Enforced client + server. */
+export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;

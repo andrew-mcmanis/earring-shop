@@ -18,9 +18,11 @@ const nextConfig: NextConfig = {
       : [],
   },
   experimental: {
-    // Product photos are posted through the create/edit Server Action.
+    // Product photos are posted together through the create/edit Server Action,
+    // so this whole-request limit must cover the worst case of MAX_PRODUCT_PHOTOS
+    // (6) × MAX_PHOTO_BYTES (8 MB) ≈ 48 MB, plus form-field overhead.
     serverActions: {
-      bodySizeLimit: '8mb',
+      bodySizeLimit: '52mb',
     },
   },
 };

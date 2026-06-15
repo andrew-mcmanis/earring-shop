@@ -16,7 +16,7 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
-import { MAX_PRODUCT_PHOTOS } from '../../data/types';
+import { MAX_PRODUCT_PHOTOS, MAX_PHOTO_BYTES } from '../../data/types';
 import { SortablePhoto, type PhotoItem } from './SortablePhoto';
 
 interface ProductPhotosProps {
@@ -80,16 +80,23 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
     }
     const chosen = Array.from(fileList).slice(0, room);
     const rejected: string[] = [];
+    const tooBig: string[] = [];
     const next: PhotoItem[] = [];
     for (const file of chosen) {
       if (!file.type.startsWith('image/')) {
         rejected.push(file.name);
         continue;
       }
+      if (file.size > MAX_PHOTO_BYTES) {
+        tooBig.push(file.name);
+        continue;
+      }
       next.push({ id: `new-${newCounter++}`, kind: 'new', url: URL.createObjectURL(file), file });
     }
     if (fileList.length > room) {
       setError(`Only ${MAX_PRODUCT_PHOTOS} photos allowed — extra files were skipped.`);
+    } else if (tooBig.length) {
+      setError(`Photo(s) over 8MB were skipped: ${tooBig.join(', ')}.`);
     } else if (rejected.length) {
       setError(`Skipped non-image file(s): ${rejected.join(', ')}.`);
     }

@@ -4,14 +4,13 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createServerSupabase } from '../../lib/supabase-server';
 import { createServiceClient } from '../../lib/supabase';
-import { MAX_PRODUCT_PHOTOS } from '../../data/types';
+import { MAX_PRODUCT_PHOTOS, MAX_PHOTO_BYTES } from '../../data/types';
 
 const BUCKET = 'product-images';
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 async function uploadImage(file: File): Promise<{ url: string } | { error: string }> {
   if (!file.type.startsWith('image/')) return { error: 'Please choose an image file (JPG, PNG, etc.).' };
-  if (file.size > MAX_IMAGE_BYTES) return { error: 'Image must be under 8MB.' };
+  if (file.size > MAX_PHOTO_BYTES) return { error: 'Image must be under 8MB.' };
 
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
   const path = `products/${crypto.randomUUID()}.${ext}`;
