@@ -61,10 +61,15 @@ export interface Product {
   colourSlug: string | null;
   /** Tint used for the placeholder graphic until a real photo exists. */
   accentColor: string;
-  /** Public URL of the product photo, or null to show the placeholder. */
+  /** Main photo (derived = images[0]), or null to show the placeholder. */
   image: string | null;
+  /** Ordered gallery photos; images[0] is the main photo. */
+  images: string[];
   visible: boolean;
   /** Sold out: stays on display but cannot be ordered. */
   soldOut: boolean;
   sortOrder: number;
 }
+
+/** Maximum photos a product may have (admin + server both enforce this). */
+export const MAX_PRODUCT_PHOTOS = 6;

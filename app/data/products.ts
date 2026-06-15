@@ -25,12 +25,14 @@ export interface ProductRow {
   colour_slug: string | null;
   accent_color: string;
   image_url: string | null;
+  image_urls: string[] | null;
   visible: boolean;
   sold_out: boolean | null;
   sort_order: number;
 }
 
 export function mapProduct(row: ProductRow): Product {
+  const images = row.image_urls ?? (row.image_url ? [row.image_url] : []);
   return {
     id: row.id,
     name: row.name,
@@ -40,7 +42,8 @@ export function mapProduct(row: ProductRow): Product {
     subcategorySlug: row.subcategory_slug,
     colourSlug: row.colour_slug,
     accentColor: row.accent_color ?? '#B5865A',
-    image: row.image_url,
+    image: images[0] ?? null,
+    images,
     visible: row.visible,
     soldOut: row.sold_out ?? false,
     sortOrder: row.sort_order ?? 0,

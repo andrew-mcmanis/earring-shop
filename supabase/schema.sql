@@ -37,7 +37,8 @@ create table if not exists products (
   subcategory_slug text references subcategories(slug) on delete set null,
   colour_slug      text references colours(slug) on delete set null,
   accent_color     text not null default '#B5865A',  -- placeholder tint
-  image_url        text,                              -- null = show placeholder
+  image_url        text,                              -- null = show placeholder (legacy single photo; synced to image_urls[1])
+  image_urls       text[] not null default '{}',      -- ordered gallery; image_urls[1] = main photo
   visible          boolean not null default true,
   sold_out         boolean not null default false,
   sort_order       int not null default 0,
