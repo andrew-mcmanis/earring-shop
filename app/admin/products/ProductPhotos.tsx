@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -38,18 +38,25 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // NOTE: `onChange` must be referentially stable (the parent wraps it in
+  // useCallback) — it's a dependency of this effect, so an unstable reference
+  // would make it re-run on every render.
   useEffect(() => {
     onChange(items);
   }, [items, onChange]);
 
+  // Keep the latest items in a ref so the unmount cleanup can revoke object URLs
+  // for files added after mount (the cleanup effect below has empty deps).
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   // Revoke object URLs when the component unmounts.
   useEffect(() => {
     return () => {
-      items.forEach((it) => {
+      itemsRef.current.forEach((it) => {
         if (it.kind === 'new') URL.revokeObjectURL(it.url);
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleDragEnd(e: DragEndEvent) {
