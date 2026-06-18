@@ -231,6 +231,11 @@ need a public URL).
    `payment_intent.succeeded` → marks the order `paid` + `paid_at` (service
    role) **and sends the customer confirmation email** (see below). The webhook
    is the source of truth; the client result is just UX.
+   - **MOVE the auto sold-out flip here.** Added 2026-06-15 in `placeOrder`
+     (`app/lib/orders.ts`): on order save, ordered products flip to `sold_out`
+     (each piece is one-of-a-kind; owner toggles back in stock when she remakes
+     it). Once Stripe lands, relocate this flip to `payment_intent.succeeded` so
+     unpaid/abandoned orders never flip items (same reason as the email).
 
 **Order confirmation emails (decided 2026-06-13 — built WITH Stripe, not before).**
 - **Customer email fires only on payment success** — sent from the webhook

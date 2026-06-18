@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { getProducts } from '../data/products';
 import { createServiceClient } from './supabase';
 
@@ -131,6 +132,28 @@ export async function placeOrder(
       })),
     );
     if (itemsError) throw itemsError;
+
+    // Each piece is one-of-a-kind: once it sells, flip it to sold out so no one
+    // else can order it. The owner toggles it back in stock when she makes a new
+    // one. Best-effort — the order is already saved, so a failure here must NOT
+    // break the customer's checkout (she can flip it manually from the admin).
+    // NOTE: when Stripe lands, move this to the payment_intent.succeeded webhook
+    // (alongside the confirmation email) so unpaid/abandoned orders never flip.
+    try {
+      const soldIds = [...new Set(items.map((l) => l.productId))];
+      const { error: soldOutError } = await supabase
+        .from('products')
+        .update({ sold_out: true })
+        .in('id', soldIds);
+      if (soldOutError) throw soldOutError;
+      revalidatePath('/');
+      revalidatePath('/admin/products');
+      for (const id of soldIds) revalidatePath(`/product/${id}`);
+    } catch (flipErr) {
+      console.error('[order] saved OK but failed to auto-flip sold-out:', flipErr, {
+        reference: `BLG-${order.order_number}`,
+      });
+    }
 
     return { status: 'success', reference: `BLG-${order.order_number}` };
   } catch (err) {
