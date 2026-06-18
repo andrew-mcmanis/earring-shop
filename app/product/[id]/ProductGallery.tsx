@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { ProductImage } from '../../components/ProductImage';
 
@@ -84,8 +85,13 @@ export function ProductGallery({ images, alt, accentColor, category }: ProductGa
                 }`}
                 style={{ backgroundColor: `${accentColor}12` }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <Image
+                  src={src}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 20vw, 96px"
+                  className="object-cover"
+                />
               </button>
             </li>
           ))}

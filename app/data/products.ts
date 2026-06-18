@@ -32,7 +32,14 @@ export interface ProductRow {
 }
 
 export function mapProduct(row: ProductRow): Product {
-  const images = row.image_urls ?? (row.image_url ? [row.image_url] : []);
+  // Prefer the ordered gallery; fall back to the legacy single image when the
+  // array is null OR empty (so a row with only image_url still shows its photo).
+  const images =
+    row.image_urls && row.image_urls.length > 0
+      ? row.image_urls
+      : row.image_url
+        ? [row.image_url]
+        : [];
   return {
     id: row.id,
     name: row.name,

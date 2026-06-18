@@ -87,6 +87,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="flex flex-col lg:flex-row gap-10">
           {/* Image gallery */}
           <ProductGallery
+            key={product.id}
             images={product.images}
             alt={product.name}
             accentColor={product.accentColor}

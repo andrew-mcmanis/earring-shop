@@ -101,28 +101,26 @@ async function parseProduct(formData: FormData): Promise<
   if (order.length > MAX_PRODUCT_PHOTOS) {
     return {
       ok: false,
-      state: {
-        status: 'error',
-        message: `You can add up to ${MAX_PRODUCT_PHOTOS} photos.`,
-        fieldErrors: { image: `Up to ${MAX_PRODUCT_PHOTOS} photos.` },
-      },
+      state: { status: 'error', message: `You can add up to ${MAX_PRODUCT_PHOTOS} photos.` },
     };
   }
 
+  // Upload all new files concurrently — they map positionally to the client's
+  // `new:i` tokens. Bail on the first failure.
+  const uploads = await Promise.all(newFiles.map((f) => uploadImage(f)));
+  const failed = uploads.find((r) => 'error' in r);
+  if (failed && 'error' in failed) {
+    return { ok: false, state: { status: 'error', message: failed.error } };
+  }
+
+  // Assemble the ordered gallery: existing URLs kept as-is, new files resolved to
+  // their uploaded URL by index. (Owner-only action, so existing tokens are trusted.)
   const imageUrls: string[] = [];
   for (const token of order) {
     if (token.startsWith('new:')) {
-      const idx = Number(token.slice(4));
-      const f = newFiles[idx];
-      if (!f) continue;
-      const res = await uploadImage(f);
-      if ('error' in res) {
-        return { ok: false, state: { status: 'error', message: res.error, fieldErrors: { image: res.error } } };
-      }
-      imageUrls.push(res.url);
+      const uploaded = uploads[Number(token.slice(4))];
+      if (uploaded && 'url' in uploaded) imageUrls.push(uploaded.url);
     } else {
-      // Existing URL kept as-is. This action is owner-only (requireUser), so the
-      // token is trusted; revisit if a lower-trust admin role is ever added.
       imageUrls.push(token);
     }
   }
