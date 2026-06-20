@@ -16,6 +16,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
   const [selectedCategory, setSelectedCategory] = useState<string | 'all'>('all');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | 'all'>('all');
   const [selectedColour, setSelectedColour] = useState<string | 'all'>('all');
+  const [inStockOnly, setInStockOnly] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const colourBySlug = useMemo(() => new Map(colours.map((c) => [c.slug, c])), [colours]);
@@ -34,9 +35,10 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
         if (selectedCategory !== 'all' && p.categorySlug !== selectedCategory) return false;
         if (selectedSubcategory !== 'all' && p.subcategorySlug !== selectedSubcategory) return false;
         if (selectedColour !== 'all' && p.colourSlug !== selectedColour) return false;
+        if (inStockOnly && p.soldOut) return false;
         return true;
       }),
-    [products, selectedCategory, selectedSubcategory, selectedColour],
+    [products, selectedCategory, selectedSubcategory, selectedColour, inStockOnly],
   );
 
   // Category is chosen via the tabs above the grid, so the refine panel only
@@ -44,6 +46,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
   const activeFilterCount = [
     selectedSubcategory !== 'all',
     selectedColour !== 'all',
+    inStockOnly,
   ].filter(Boolean).length;
 
   function badgeFor(p: Product): string {
@@ -122,8 +125,10 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
           selectedCategory={selectedCategory}
           selectedSubcategory={selectedSubcategory}
           selectedColour={selectedColour}
+          inStockOnly={inStockOnly}
           onSubcategoryChange={setSelectedSubcategory}
           onColourChange={setSelectedColour}
+          onInStockOnlyChange={setInStockOnly}
           resultCount={filtered.length}
           onMobileClose={() => setMobileFiltersOpen(false)}
         />

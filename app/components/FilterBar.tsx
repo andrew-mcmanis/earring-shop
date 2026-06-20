@@ -9,8 +9,10 @@ interface FilterBarProps {
   selectedCategory: string | 'all';
   selectedSubcategory: string | 'all';
   selectedColour: string | 'all';
+  inStockOnly: boolean;
   onSubcategoryChange: (slug: string | 'all') => void;
   onColourChange: (slug: string | 'all') => void;
+  onInStockOnlyChange: (value: boolean) => void;
   resultCount: number;
   onMobileClose?: () => void;
 }
@@ -32,13 +34,16 @@ export function FilterBar({
   selectedCategory,
   selectedSubcategory,
   selectedColour,
+  inStockOnly,
   onSubcategoryChange,
   onColourChange,
+  onInStockOnlyChange,
   resultCount,
   onMobileClose,
 }: FilterBarProps) {
   // Category lives in the tabs above the grid; this panel only refines.
-  const hasActiveFilters = selectedSubcategory !== 'all' || selectedColour !== 'all';
+  const hasActiveFilters =
+    selectedSubcategory !== 'all' || selectedColour !== 'all' || inStockOnly;
 
   // Subcategories only apply to Earrings — show them only when that's selected.
   const showSubcategories = selectedCategory === 'earrings';
@@ -47,6 +52,7 @@ export function FilterBar({
   function clearAll() {
     onSubcategoryChange('all');
     onColourChange('all');
+    onInStockOnlyChange(false);
   }
 
   return (
@@ -68,6 +74,19 @@ export function FilterBar({
             )}
           </div>
         </div>
+
+        {/* Availability */}
+        <FilterSection label="Availability">
+          <label className="flex items-center gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => onInStockOnlyChange(e.target.checked)}
+              className="h-4 w-4 accent-kraft cursor-pointer"
+            />
+            <span className="font-body text-sm text-ink">In stock only</span>
+          </label>
+        </FilterSection>
 
         {/* Subcategory — Earrings only */}
         {showSubcategories && (
