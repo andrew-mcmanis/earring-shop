@@ -77,15 +77,26 @@ export function FilterBar({
 
         {/* Availability */}
         <FilterSection label="Availability">
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={inStockOnly}
-              onChange={(e) => onInStockOnlyChange(e.target.checked)}
-              className="h-4 w-4 accent-kraft cursor-pointer"
-            />
+          <button
+            type="button"
+            role="switch"
+            aria-checked={inStockOnly}
+            onClick={() => onInStockOnlyChange(!inStockOnly)}
+            className="group flex items-center gap-2.5 cursor-pointer focus:outline-none"
+          >
+            <span
+              className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full border transition-colors duration-150 group-focus-visible:ring-2 group-focus-visible:ring-kraft group-focus-visible:ring-offset-1 ${
+                inStockOnly ? 'bg-kraft border-kraft' : 'bg-cream border-kraft-light'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-150 ${
+                  inStockOnly ? 'translate-x-[18px]' : 'translate-x-0.5'
+                }`}
+              />
+            </span>
             <span className="font-body text-sm text-ink">In stock only</span>
-          </label>
+          </button>
         </FilterSection>
 
         {/* Subcategory — Earrings only */}
