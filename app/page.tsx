@@ -15,7 +15,7 @@ export default async function Home() {
     <>
       <Header />
 
-      <section className="bg-ink text-cream py-16 px-4 text-center">
+      <section className="surface-ink text-cream py-16 px-4 text-center">
         <h1 className="font-heading text-5xl sm:text-6xl lg:text-7xl font-bold mb-4 leading-[1.05]">
           Every piece
           <br className="sm:hidden" /> made by hand
