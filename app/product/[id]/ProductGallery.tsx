@@ -62,6 +62,7 @@ export function ProductGallery({ images, alt, accentColor, category }: ProductGa
           alt={count > 1 ? `${alt} — photo ${safeIndex + 1} of ${count}` : alt}
           sizes="(max-width: 1024px) 100vw, 50vw"
           iconClassName="w-40 h-60"
+          priority
         />
       </div>
 

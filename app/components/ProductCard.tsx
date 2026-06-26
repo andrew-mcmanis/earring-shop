@@ -9,9 +9,12 @@ interface ProductCardProps {
   badge: string;
   /** Colour name shown under the title, when the product has a colour. */
   colour?: Colour;
+  /** Eager-load this card's image — set on the first-row (above-the-fold) cards
+   *  so the LCP image isn't lazy-loaded. */
+  priority?: boolean;
 }
 
-export function ProductCard({ product, badge, colour }: ProductCardProps) {
+export function ProductCard({ product, badge, colour, priority }: ProductCardProps) {
   return (
     <article className="group relative flex flex-col bg-white rounded-lg overflow-hidden border border-cream-dark hover:border-kraft transition-all duration-200 hover:shadow-sm">
       <Link
@@ -27,6 +30,7 @@ export function ProductCard({ product, badge, colour }: ProductCardProps) {
           alt={product.name}
           sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
           iconClassName="w-16 h-24 transition-transform duration-300 group-hover:scale-105"
+          priority={priority}
         />
 
         <span className="absolute top-3 left-3 z-10 bg-cream text-ink-light text-xs font-body font-medium px-2 py-0.5 rounded capitalize border border-cream-dark">

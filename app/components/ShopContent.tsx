@@ -145,12 +145,13 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filtered.map((product) => (
+            {filtered.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 badge={badgeFor(product)}
                 colour={product.colourSlug ? colourBySlug.get(product.colourSlug) : undefined}
+                priority={index < 2}
               />
             ))}
           </div>

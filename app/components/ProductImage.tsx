@@ -10,6 +10,8 @@ interface ProductImageProps {
   sizes?: string;
   /** Placeholder icon size when there's no photo. */
   iconClassName?: string;
+  /** Eager-load + preload — set on above-the-fold LCP images. */
+  priority?: boolean;
 }
 
 // Renders a real product photo (filling its relative parent) when one exists,
@@ -22,6 +24,7 @@ export function ProductImage({
   alt,
   sizes = '100vw',
   iconClassName,
+  priority = false,
 }: ProductImageProps) {
   if (image) {
     return (
@@ -29,6 +32,7 @@ export function ProductImage({
         src={image}
         alt={alt}
         fill
+        priority={priority}
         sizes={sizes}
         className="object-cover transition-transform duration-300 group-hover:scale-105"
       />
