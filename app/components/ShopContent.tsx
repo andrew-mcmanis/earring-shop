@@ -70,7 +70,8 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
       {/* Category tabs — the primary way to browse */}
       <div
-        className="flex flex-wrap gap-2"
+        className="flex flex-wrap gap-2 reveal"
+        style={{ animationDelay: '0.1s' }}
         role="group"
         aria-label="Browse by category"
       >
@@ -94,7 +95,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
       </div>
 
       {/* Mobile refine toggle bar */}
-      <div className="lg:hidden flex items-center justify-between">
+      <div className="lg:hidden flex items-center justify-between reveal" style={{ animationDelay: '0.15s' }}>
         <button
           onClick={() => setMobileFiltersOpen((o) => !o)}
           className="cursor-pointer flex items-center gap-2 bg-cream-dark border border-kraft-light text-ink font-body text-sm font-medium px-4 py-2.5 rounded hover:border-kraft transition-colors duration-150"
@@ -116,7 +117,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
         </span>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col lg:flex-row gap-8 reveal" style={{ animationDelay: '0.2s' }}>
       {/* Refine panel — always visible on desktop, toggled on mobile */}
       <div className={mobileFiltersOpen ? 'lg:block' : 'hidden lg:block'}>
         <FilterBar

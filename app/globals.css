@@ -50,6 +50,23 @@ body {
     radial-gradient(120% 95% at 50% -10%, rgba(181, 134, 90, 0.18), transparent 55%);
 }
 
+/* Gentle staggered reveal on first paint (pure CSS). The reduced-motion rule
+   below makes it instant for users who prefer that. */
+@keyframes blg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.reveal {
+  animation: blg-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* Respect users who prefer reduced motion — neutralize transitions,
    transforms and animations without removing focus visibility. */
 @media (prefers-reduced-motion: reduce) {
@@ -57,6 +74,7 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

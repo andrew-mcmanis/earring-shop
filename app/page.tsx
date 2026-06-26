@@ -25,7 +25,7 @@ export default async function Home() {
       <Header />
 
       <section className="surface-ink text-cream overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 reveal">
           {/* Sparkle accents — echo the twinkles in the logo */}
           <Sparkle className="pointer-events-none absolute top-6 left-3 sm:left-8 w-4 sm:w-5 text-kraft/70 rotate-12" />
           <Sparkle className="pointer-events-none absolute top-12 right-8 sm:right-16 w-7 sm:w-10 text-kraft-light/55 -rotate-6" />
