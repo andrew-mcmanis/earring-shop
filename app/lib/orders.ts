@@ -1,8 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getProducts } from '../data/products';
-import { createServiceClient } from './supabase';
+import type { Product } from '../data/types';
+import { getProducts, mapProduct, type ProductRow } from '../data/products';
+import { isSupabaseConfigured, createReadClient, createServiceClient } from './supabase';
 
 export interface PlaceOrderState {
   status: 'idle' | 'success' | 'error';
@@ -53,7 +54,26 @@ export async function placeOrder(
     // ignore malformed payload — handled by the empty check below
   }
 
-  const catalogue = await getProducts();
+  // Read the catalogue with explicit error handling. getProducts() falls back
+  // to the in-repo sample data on a query error — right for browsing, but here
+  // it would make every real cart item miss and falsely report an empty cart.
+  // A checkout must fail honestly instead.
+  let catalogue: Product[];
+  if (isSupabaseConfigured()) {
+    const supabase = createReadClient();
+    const { data, error } = await supabase.from('products').select('*').eq('visible', true);
+    if (error || !data) {
+      console.error('[order] catalogue read failed during checkout:', error?.message);
+      return {
+        status: 'error',
+        message: 'Sorry, something went wrong on our side — please try again in a moment.',
+      };
+    }
+    catalogue = (data as ProductRow[]).map(mapProduct);
+  } else {
+    // Demo mode (no database): the sample catalogue matches the sample cart ids.
+    catalogue = await getProducts();
+  }
   const items: OrderLine[] = [];
   const soldOutNames: string[] = [];
   for (const entry of cart) {

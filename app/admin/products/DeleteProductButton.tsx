@@ -6,6 +6,7 @@ import { deleteProduct } from './actions';
 // Two-step inline confirm (no native dialog) — on-brand and accessible.
 export function DeleteProductButton({ id, name }: { id: string; name: string }) {
   const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   if (!confirming) {
@@ -26,18 +27,32 @@ export function DeleteProductButton({ id, name }: { id: string; name: string }) 
       <button
         type="button"
         disabled={isPending}
-        onClick={() => startTransition(() => deleteProduct(id))}
+        onClick={() =>
+          startTransition(async () => {
+            setError(null);
+            const res = await deleteProduct(id);
+            if (res?.error) setError(res.error);
+          })
+        }
         className="cursor-pointer font-body text-xs font-semibold text-cream bg-red-600 px-2.5 py-1 rounded hover:bg-red-700 transition-colors duration-150 disabled:opacity-60"
       >
         {isPending ? 'Deleting…' : 'Yes, delete'}
       </button>
       <button
         type="button"
-        onClick={() => setConfirming(false)}
+        onClick={() => {
+          setConfirming(false);
+          setError(null);
+        }}
         className="cursor-pointer font-body text-xs text-ink-light hover:text-ink transition-colors duration-150"
       >
         Cancel
       </button>
+      {error && (
+        <span role="alert" className="font-body text-xs text-red-600">
+          {error}
+        </span>
+      )}
     </span>
   );
 }

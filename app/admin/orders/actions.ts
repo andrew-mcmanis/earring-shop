@@ -7,14 +7,19 @@ import type { OrderStatus } from '../../data/types';
 
 const VALID: OrderStatus[] = ['new', 'made', 'posted', 'cancelled'];
 
-export async function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {
-  if (!VALID.includes(status)) return;
+export async function updateOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<{ error?: string }> {
+  if (!VALID.includes(status)) return { error: 'Invalid status.' };
   const supabase = await createServerSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/admin/login');
 
-  await supabase.from('orders').update({ status }).eq('id', id);
+  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+  if (error) return { error: `Could not update: ${error.message}` };
   revalidatePath('/admin/orders');
+  return {};
 }

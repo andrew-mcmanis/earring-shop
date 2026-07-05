@@ -160,7 +160,19 @@ export async function updateColour(slug: string, name: string, hex: string): Pro
   if (!HEX_RE.test(hex)) return { ok: false, error: 'Please choose a colour.' };
   const { error } = await supabase.from('colours').update({ name: clean, hex }).eq('slug', slug);
   if (error) return { ok: false, error: error.message };
+
+  // Products snapshot the colour's hex into accent_color at save time, so an
+  // edited swatch must cascade or existing products keep the old tint forever.
+  const { error: accentError } = await supabase
+    .from('products')
+    .update({ accent_color: hex })
+    .eq('colour_slug', slug);
+  if (accentError) {
+    return { ok: false, error: `Colour saved, but product tints failed to update: ${accentError.message}` };
+  }
+
   refresh();
+  revalidatePath('/product/[id]', 'page');
   return { ok: true };
 }
 

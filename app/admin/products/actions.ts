@@ -194,24 +194,30 @@ export async function updateProduct(
   redirect('/admin/products');
 }
 
-export async function deleteProduct(id: string): Promise<void> {
+export async function deleteProduct(id: string): Promise<{ error?: string }> {
   const supabase = await requireUser();
-  await supabase.from('products').delete().eq('id', id);
+  const { error } = await supabase.from('products').delete().eq('id', id);
+  if (error) return { error: `Could not delete: ${error.message}` };
   revalidatePath('/admin/products');
   revalidatePath('/');
+  return {};
 }
 
-export async function toggleVisibility(id: string, visible: boolean): Promise<void> {
+export async function toggleVisibility(id: string, visible: boolean): Promise<{ error?: string }> {
   const supabase = await requireUser();
-  await supabase.from('products').update({ visible }).eq('id', id);
+  const { error } = await supabase.from('products').update({ visible }).eq('id', id);
+  if (error) return { error: `Could not update: ${error.message}` };
   revalidatePath('/admin/products');
   revalidatePath('/');
+  return {};
 }
 
-export async function toggleSoldOut(id: string, soldOut: boolean): Promise<void> {
+export async function toggleSoldOut(id: string, soldOut: boolean): Promise<{ error?: string }> {
   const supabase = await requireUser();
-  await supabase.from('products').update({ sold_out: soldOut }).eq('id', id);
+  const { error } = await supabase.from('products').update({ sold_out: soldOut }).eq('id', id);
+  if (error) return { error: `Could not update: ${error.message}` };
   revalidatePath('/admin/products');
   revalidatePath('/');
   revalidatePath(`/product/${id}`);
+  return {};
 }

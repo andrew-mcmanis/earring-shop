@@ -151,7 +151,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
                 product={product}
                 badge={badgeFor(product)}
                 colour={product.colourSlug ? colourBySlug.get(product.colourSlug) : undefined}
-                priority={index < 2}
+                priority={index < 3}
               />
             ))}
           </div>
