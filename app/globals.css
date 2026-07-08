@@ -81,6 +81,21 @@ body {
   animation: blg-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Below-fold product cards: JS marks them pending after load (progressive
+   enhancement — nothing is hidden without JS), then reveals on first
+   intersection. Reduced-motion users never get the pending state. */
+.card-pending {
+  opacity: 0;
+  transform: translateY(14px);
+}
+.card-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* Respect users who prefer reduced motion — neutralize transitions,
    transforms and animations without removing focus visibility. */
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Category, Subcategory, Colour, Product } from '../data/types';
 import { FilterBar } from './FilterBar';
 import { ProductCard } from './ProductCard';
@@ -18,6 +18,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
   const [selectedColour, setSelectedColour] = useState<string | 'all'>('all');
   const [inStockOnly, setInStockOnly] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const colourBySlug = useMemo(() => new Map(colours.map((c) => [c.slug, c])), [colours]);
   const subcategoryNameBySlug = useMemo(
@@ -53,6 +54,43 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
     if (p.subcategorySlug) return subcategoryNameBySlug.get(p.subcategorySlug) ?? p.subcategorySlug;
     return categoryNameBySlug.get(p.categorySlug) ?? p.categorySlug;
   }
+
+  // Reveal below-fold cards the first time they scroll into view — extends the
+  // page-load rise-in. Runs once per mount: cards rendered later (filtering)
+  // are never marked pending, and reduced-motion users skip it entirely.
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid || typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const cards = Array.from(grid.children) as HTMLElement[];
+    const below = cards.filter(
+      (c) => c.getBoundingClientRect().top > window.innerHeight,
+    );
+    if (below.length === 0) return;
+
+    below.forEach((c) => c.classList.add('card-pending'));
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const el = entry.target as HTMLElement;
+          const col = Array.prototype.indexOf.call(grid.children, el) % 3;
+          el.style.transitionDelay = `${col * 60}ms`;
+          el.classList.add('card-in');
+          el.classList.remove('card-pending');
+          io.unobserve(el);
+        }
+      },
+      { rootMargin: '0px 0px -5% 0px' },
+    );
+    below.forEach((c) => io.observe(c));
+    return () => {
+      io.disconnect();
+      below.forEach((c) => c.classList.remove('card-pending'));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function selectCategory(slug: string | 'all') {
     setSelectedCategory(slug);
@@ -145,7 +183,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {filtered.map((product, index) => (
               <ProductCard
                 key={product.id}
