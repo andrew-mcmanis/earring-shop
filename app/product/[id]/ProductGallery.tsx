@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 import { ProductImage } from '../../components/ProductImage';
+import { GalleryLightbox } from './GalleryLightbox';
 
 interface ProductGalleryProps {
   images: string[];
@@ -19,6 +20,8 @@ export function ProductGallery({ images, alt, accentColor, category }: ProductGa
   const [index, setIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const zoomBtnRef = useRef<HTMLButtonElement>(null);
 
   const count = images.length;
   const safeIndex = count > 0 ? Math.min(index, count - 1) : 0;
@@ -55,15 +58,35 @@ export function ProductGallery({ images, alt, accentColor, category }: ProductGa
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <ProductImage
-          image={current}
-          accentColor={accentColor}
-          category={category}
-          alt={count > 1 ? `${alt} — photo ${safeIndex + 1} of ${count}` : alt}
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          iconClassName="w-40 h-60"
-          priority
-        />
+        {count > 0 ? (
+          <button
+            type="button"
+            ref={zoomBtnRef}
+            onClick={() => setLightboxOpen(true)}
+            aria-label="View photo full screen"
+            className="relative block h-full w-full cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft focus-visible:ring-inset"
+          >
+            <ProductImage
+              image={current}
+              accentColor={accentColor}
+              category={category}
+              alt={count > 1 ? `${alt} — photo ${safeIndex + 1} of ${count}` : alt}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              iconClassName="w-40 h-60"
+              priority
+            />
+          </button>
+        ) : (
+          <ProductImage
+            image={current}
+            accentColor={accentColor}
+            category={category}
+            alt={alt}
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            iconClassName="w-40 h-60"
+            priority
+          />
+        )}
       </div>
 
       {count > 1 && (
@@ -97,6 +120,19 @@ export function ProductGallery({ images, alt, accentColor, category }: ProductGa
             </li>
           ))}
         </ul>
+      )}
+
+      {lightboxOpen && count > 0 && (
+        <GalleryLightbox
+          images={images}
+          alt={alt}
+          index={safeIndex}
+          onIndexChange={select}
+          onClose={() => {
+            setLightboxOpen(false);
+            zoomBtnRef.current?.focus();
+          }}
+        />
       )}
     </div>
   );
