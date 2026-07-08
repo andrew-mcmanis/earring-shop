@@ -5,6 +5,7 @@ import { Footer } from '../../components/Footer';
 
 export const metadata: Metadata = {
   title: 'Order received',
+  robots: { index: false, follow: false },
 };
 
 interface SuccessPageProps {

@@ -90,6 +90,10 @@ Make it production-ready, then flip the switch.
   from her brand, not a test address.
 - **Legal / policy pages** — returns & refunds, privacy, terms. Needed before
   taking real money and reassures buyers.
+- **About the maker + contact route** — a short "meet the maker" section and a
+  customer contact link. Needs content from the owner (her words + a shop email;
+  photo optional). Parked from the 2026-06-27 award pass — the two biggest
+  remaining trust gaps for a handmade shop.
 - **Supabase Pro** — upgrade so the project never auto-pauses; then **remove the
   keep-alive cron** (`app/api/keep-alive/route.ts` + the `vercel.json` cron).
 - **Analytics** — Vercel Web Analytics + Speed Insights.

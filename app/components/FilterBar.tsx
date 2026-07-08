@@ -10,6 +10,7 @@ interface FilterBarProps {
   selectedSubcategory: string | 'all';
   selectedColour: string | 'all';
   inStockOnly: boolean;
+  activeFilterCount: number;
   onSubcategoryChange: (slug: string | 'all') => void;
   onColourChange: (slug: string | 'all') => void;
   onInStockOnlyChange: (value: boolean) => void;
@@ -35,6 +36,7 @@ export function FilterBar({
   selectedSubcategory,
   selectedColour,
   inStockOnly,
+  activeFilterCount,
   onSubcategoryChange,
   onColourChange,
   onInStockOnlyChange,
@@ -42,8 +44,8 @@ export function FilterBar({
   onMobileClose,
 }: FilterBarProps) {
   // Category lives in the tabs above the grid; this panel only refines.
-  const hasActiveFilters =
-    selectedSubcategory !== 'all' || selectedColour !== 'all' || inStockOnly;
+  // The count comes from ShopContent so the two never drift.
+  const hasActiveFilters = activeFilterCount > 0;
 
   // Subcategories only apply to Earrings — show them only when that's selected.
   const showSubcategories = selectedCategory === 'earrings';

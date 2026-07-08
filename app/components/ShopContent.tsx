@@ -127,6 +127,7 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
           selectedSubcategory={selectedSubcategory}
           selectedColour={selectedColour}
           inStockOnly={inStockOnly}
+          activeFilterCount={activeFilterCount}
           onSubcategoryChange={setSelectedSubcategory}
           onColourChange={setSelectedColour}
           onInStockOnlyChange={setInStockOnly}

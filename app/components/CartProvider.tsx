@@ -58,6 +58,28 @@ function reducer(state: CartItem[], action: Action): CartItem[] {
 
 const STORAGE_KEY = 'blg-cart';
 
+// Persisted carts can be stale (old schema) or hand-edited; a malformed item
+// would poison the totals with NaN. Validate each one and drop the rest.
+function isValidItem(v: unknown): v is CartItem {
+  if (typeof v !== 'object' || v === null) return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' &&
+    o.id.length > 0 &&
+    typeof o.name === 'string' &&
+    typeof o.price === 'number' &&
+    Number.isFinite(o.price) &&
+    o.price >= 0 &&
+    typeof o.accentColor === 'string' &&
+    typeof o.categorySlug === 'string' &&
+    (o.image === null || typeof o.image === 'string') &&
+    typeof o.qty === 'number' &&
+    Number.isInteger(o.qty) &&
+    o.qty >= 1 &&
+    o.qty <= 99
+  );
+}
+
 interface CartContextValue {
   items: CartItem[];
   totalCount: number;
@@ -88,7 +110,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) dispatch({ type: 'hydrate', items: parsed });
+        if (Array.isArray(parsed)) {
+          dispatch({ type: 'hydrate', items: parsed.filter(isValidItem) });
+        }
       }
     } catch {
       // Ignore malformed or unavailable storage.
