@@ -19,6 +19,8 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
   const [inStockOnly, setInStockOnly] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+  const revealObserver = useRef<IntersectionObserver | null>(null);
+  const pendingCards = useRef<Set<HTMLElement>>(new Set());
 
   const colourBySlug = useMemo(() => new Map(colours.map((c) => [c.slug, c])), [colours]);
   const subcategoryNameBySlug = useMemo(
@@ -75,22 +77,47 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const el = entry.target as HTMLElement;
-          const col = Array.prototype.indexOf.call(grid.children, el) % 3;
-          el.style.transitionDelay = `${col * 60}ms`;
+          const delay = (Array.prototype.indexOf.call(grid.children, el) % 3) * 60;
+          el.style.transitionDelay = `${delay}ms`;
           el.classList.add('card-in');
           el.classList.remove('card-pending');
           io.unobserve(el);
+          pendingCards.current.delete(el);
+          // Once the rise-in has played, drop the reveal styles so the card's
+          // normal Tailwind transitions (hover border/shadow) take back over —
+          // `.card-in`'s transition list would otherwise override them forever.
+          setTimeout(() => {
+            el.classList.remove('card-in');
+            el.style.transitionDelay = '';
+          }, 700 + delay);
         }
       },
       { rootMargin: '0px 0px -5% 0px' },
     );
     below.forEach((c) => io.observe(c));
+    revealObserver.current = io;
+    pendingCards.current = new Set(below);
     return () => {
       io.disconnect();
       below.forEach((c) => c.classList.remove('card-pending'));
+      revealObserver.current = null;
+      pendingCards.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Cards filtered out before they ever revealed unmount without unobserve —
+  // release them so the observer doesn't hold detached nodes.
+  useEffect(() => {
+    const io = revealObserver.current;
+    if (!io) return;
+    for (const el of pendingCards.current) {
+      if (!document.contains(el)) {
+        io.unobserve(el);
+        pendingCards.current.delete(el);
+      }
+    }
+  }, [filtered]);
 
   function selectCategory(slug: string | 'all') {
     setSelectedCategory(slug);
