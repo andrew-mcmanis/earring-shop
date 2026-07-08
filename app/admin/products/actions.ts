@@ -221,3 +221,50 @@ export async function toggleSoldOut(id: string, soldOut: boolean): Promise<{ err
   revalidatePath(`/product/${id}`);
   return {};
 }
+
+export async function duplicateProduct(id: string): Promise<{ id?: string; error?: string }> {
+  const supabase = await requireUser();
+
+  const { data: source, error: readError } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (readError || !source) {
+    return { error: `Could not load the product: ${readError?.message ?? 'not found'}` };
+  }
+
+  const { data: last } = await supabase
+    .from('products')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // The copy shares photo URLs (nothing ever deletes storage files, so that is
+  // safe) and stays hidden until the owner has renamed and reviewed it.
+  const { data: created, error } = await supabase
+    .from('products')
+    .insert({
+      name: `${source.name} (copy)`,
+      description: source.description,
+      price: source.price,
+      category_slug: source.category_slug,
+      subcategory_slug: source.subcategory_slug,
+      colour_slug: source.colour_slug,
+      accent_color: source.accent_color,
+      image_url: source.image_url,
+      image_urls: source.image_urls,
+      visible: false,
+      sold_out: source.sold_out,
+      sort_order: (last?.sort_order ?? 0) + 1,
+    })
+    .select('id')
+    .single();
+  if (error || !created) {
+    return { error: `Could not duplicate: ${error?.message ?? 'no row returned'}` };
+  }
+
+  revalidatePath('/admin/products');
+  return { id: created.id };
+}

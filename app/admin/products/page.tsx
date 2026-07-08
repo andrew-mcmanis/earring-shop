@@ -5,6 +5,7 @@ import { ProductImage } from '../../components/ProductImage';
 import { getCategories, getSubcategories, getColours } from '../../data/products';
 import { adminGetProducts } from './queries';
 import { DeleteProductButton } from './DeleteProductButton';
+import { DuplicateProductButton } from './DuplicateProductButton';
 import { VisibilityToggle } from './VisibilityToggle';
 import { SoldOutToggle } from './SoldOutToggle';
 
@@ -104,6 +105,7 @@ export default async function AdminProductsPage() {
                   <SoldOutToggle id={p.id} soldOut={p.soldOut} />
 
                   <div className="flex items-center gap-3">
+                    <DuplicateProductButton id={p.id} />
                     <Link
                       href={`/admin/products/${p.id}/edit`}
                       className="font-body text-sm font-medium text-kraft-dark hover:text-kraft transition-colors duration-150"
