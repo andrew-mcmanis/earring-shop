@@ -2,29 +2,9 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerSupabase } from '../lib/supabase-server';
 import { signOut } from './actions';
+import { getDashboardStats } from './queries';
 
 export const metadata = { title: 'Admin' };
-
-const SECTIONS = [
-  {
-    href: '/admin/products',
-    title: 'Products',
-    description: 'Add, edit and remove items. Set prices, categories and colours.',
-    ready: true,
-  },
-  {
-    href: '/admin/orders',
-    title: 'Orders',
-    description: 'See incoming orders and mark them as made and posted.',
-    ready: true,
-  },
-  {
-    href: '/admin/labels',
-    title: 'Labels',
-    description: 'Manage categories, earring types and colours.',
-    ready: true,
-  },
-];
 
 export default async function AdminPage() {
   const supabase = await createServerSupabase();
@@ -33,6 +13,9 @@ export default async function AdminPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect('/admin/login');
+
+  const stats = await getDashboardStats();
+  const n = (v: number | null) => (v === null ? '—' : String(v));
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -62,42 +45,85 @@ export default async function AdminPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-        <h2 className="font-heading text-4xl font-bold text-ink mb-6">Welcome back</h2>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8">
+        <h2 className="font-heading text-4xl font-bold text-ink">Welcome back</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          {SECTIONS.map((s) => {
-            const inner = (
-              <>
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-2xl font-bold text-ink">{s.title}</h3>
-                  {!s.ready && (
-                    <span className="font-body text-[10px] uppercase tracking-wider text-ink-light bg-cream-dark px-2 py-0.5 rounded">
-                      Soon
-                    </span>
-                  )}
-                </div>
-                <p className="font-body text-sm text-ink-light leading-relaxed">{s.description}</p>
-              </>
-            );
-            return s.ready ? (
-              <Link
-                key={s.href}
-                href={s.href}
-                className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-2 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
-              >
-                {inner}
-              </Link>
-            ) : (
-              <div
-                key={s.href}
-                className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-2 opacity-70"
-              >
-                {inner}
-              </div>
-            );
-          })}
+          <Link
+            href="/admin/products"
+            className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+          >
+            <h3 className="font-heading text-2xl font-bold text-ink">Products</h3>
+            <p className="font-body text-3xl font-semibold text-ink tabular-nums">{n(stats.productCount)}</p>
+            <p className="font-body text-sm text-ink-light">
+              {stats.soldOutCount ? `${stats.soldOutCount} sold out` : 'All in stock'}
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/orders"
+            className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+          >
+            <h3 className="font-heading text-2xl font-bold text-ink">New orders</h3>
+            <p className="font-body text-3xl font-semibold text-ink tabular-nums">{n(stats.newOrderCount)}</p>
+            <p className="font-body text-sm text-ink-light">
+              {stats.newOrderCount ? 'Awaiting action' : 'Nothing waiting'}
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/labels"
+            className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+          >
+            <h3 className="font-heading text-2xl font-bold text-ink">Labels</h3>
+            <p className="font-body text-3xl font-semibold text-ink tabular-nums">
+              {stats.categoryCount === null ? '—' : stats.categoryCount + (stats.colourCount ?? 0)}
+            </p>
+            <p className="font-body text-sm text-ink-light">
+              {stats.categoryCount === null
+                ? 'Categories & colours'
+                : `${stats.categoryCount} categories · ${stats.colourCount ?? 0} colours`}
+            </p>
+          </Link>
         </div>
+
+        <section aria-label="Latest orders" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-heading text-2xl font-bold text-ink">Latest orders</h3>
+            <Link
+              href="/admin/orders"
+              className="font-body text-sm text-kraft-dark hover:text-kraft transition-colors duration-150"
+            >
+              View all
+            </Link>
+          </div>
+          {stats.latestOrders.length === 0 ? (
+            <p className="font-body text-sm text-ink-light bg-white border border-cream-dark rounded-lg px-4 py-6 text-center">
+              No orders yet — they&apos;ll appear here.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {stats.latestOrders.map((o) => (
+                <li key={o.id}>
+                  <Link
+                    href="/admin/orders"
+                    className="bg-white border border-cream-dark rounded-lg px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-1 hover:border-kraft transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+                  >
+                    <span className="font-body text-sm font-semibold text-ink tabular-nums">BLG-{o.orderNumber}</span>
+                    <span className="font-body text-sm text-ink flex-1 min-w-[8rem]">{o.customerName}</span>
+                    <span className="font-body text-sm font-semibold text-ink tabular-nums">£{o.subtotal.toFixed(2)}</span>
+                    <span className="font-body text-xs font-medium capitalize bg-cream-dark border border-kraft-light text-ink-light px-2 py-0.5 rounded">
+                      {o.status}
+                    </span>
+                    <span className="font-body text-xs text-ink-light">
+                      {new Date(o.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </main>
     </div>
   );
