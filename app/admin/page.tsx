@@ -56,7 +56,11 @@ export default async function AdminPage() {
             <h3 className="font-heading text-2xl font-bold text-ink">Products</h3>
             <p className="font-body text-3xl font-semibold text-ink tabular-nums">{n(stats.productCount)}</p>
             <p className="font-body text-sm text-ink-light">
-              {stats.soldOutCount ? `${stats.soldOutCount} sold out` : 'All in stock'}
+              {stats.soldOutCount === null
+                ? 'Stock status unavailable'
+                : stats.soldOutCount > 0
+                  ? `${stats.soldOutCount} sold out`
+                  : 'All in stock'}
             </p>
           </Link>
 
@@ -77,12 +81,14 @@ export default async function AdminPage() {
           >
             <h3 className="font-heading text-2xl font-bold text-ink">Labels</h3>
             <p className="font-body text-3xl font-semibold text-ink tabular-nums">
-              {stats.categoryCount === null ? '—' : stats.categoryCount + (stats.colourCount ?? 0)}
+              {stats.categoryCount === null || stats.colourCount === null
+                ? '—'
+                : stats.categoryCount + stats.colourCount}
             </p>
             <p className="font-body text-sm text-ink-light">
-              {stats.categoryCount === null
+              {stats.categoryCount === null || stats.colourCount === null
                 ? 'Categories & colours'
-                : `${stats.categoryCount} categories · ${stats.colourCount ?? 0} colours`}
+                : `${stats.categoryCount} categories · ${stats.colourCount} colours`}
             </p>
           </Link>
         </div>
