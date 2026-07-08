@@ -12,7 +12,7 @@ export function Footer() {
         <span aria-hidden="true"> · </span>
         <Link
           href="/admin/login"
-          className="text-ink-light/60 hover:text-kraft underline underline-offset-2 transition-colors duration-150"
+          className="text-ink-light hover:text-kraft underline underline-offset-2 transition-colors duration-150"
         >
           Sign in
         </Link>

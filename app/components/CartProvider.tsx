@@ -30,6 +30,11 @@ type Action =
   | { type: 'remove'; id: string }
   | { type: 'clear' };
 
+// Sanity ceiling, not a stock rule — no real order needs more, and it bounds
+// what a stored cart can claim. Enforced in the reducer so every caller
+// (steppers, add, hydration) inherits it.
+const MAX_QTY = 99;
+
 function reducer(state: CartItem[], action: Action): CartItem[] {
   switch (action.type) {
     case 'hydrate':
@@ -38,14 +43,16 @@ function reducer(state: CartItem[], action: Action): CartItem[] {
       const existing = state.find((i) => i.id === action.item.id);
       if (existing) {
         return state.map((i) =>
-          i.id === action.item.id ? { ...i, qty: i.qty + 1 } : i,
+          i.id === action.item.id ? { ...i, qty: Math.min(i.qty + 1, MAX_QTY) } : i,
         );
       }
       return [...state, { ...action.item, qty: 1 }];
     }
     case 'setQty': {
       if (action.qty <= 0) return state.filter((i) => i.id !== action.id);
-      return state.map((i) => (i.id === action.id ? { ...i, qty: action.qty } : i));
+      return state.map((i) =>
+        i.id === action.id ? { ...i, qty: Math.min(action.qty, MAX_QTY) } : i,
+      );
     }
     case 'remove':
       return state.filter((i) => i.id !== action.id);
@@ -59,7 +66,8 @@ function reducer(state: CartItem[], action: Action): CartItem[] {
 const STORAGE_KEY = 'blg-cart';
 
 // Persisted carts can be stale (old schema) or hand-edited; a malformed item
-// would poison the totals with NaN. Validate each one and drop the rest.
+// would poison the totals with NaN. Drop structurally invalid items; an
+// oversized qty is clamped on hydrate rather than destroying the line.
 function isValidItem(v: unknown): v is CartItem {
   if (typeof v !== 'object' || v === null) return false;
   const o = v as Record<string, unknown>;
@@ -75,8 +83,7 @@ function isValidItem(v: unknown): v is CartItem {
     (o.image === null || typeof o.image === 'string') &&
     typeof o.qty === 'number' &&
     Number.isInteger(o.qty) &&
-    o.qty >= 1 &&
-    o.qty <= 99
+    o.qty >= 1
   );
 }
 
@@ -111,7 +118,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          dispatch({ type: 'hydrate', items: parsed.filter(isValidItem) });
+          const items = parsed
+            .filter(isValidItem)
+            .map((i) => ({ ...i, qty: Math.min(i.qty, MAX_QTY) }));
+          dispatch({ type: 'hydrate', items });
         }
       }
     } catch {
