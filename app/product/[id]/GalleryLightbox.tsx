@@ -13,7 +13,7 @@ interface GalleryLightboxProps {
 }
 
 // Full-screen photo viewer over a deep-ink backdrop. Rendered through a portal
-// (z-[100], above the header and cart drawer). Esc closes, arrows navigate,
+// (z-[110], above the header and cart drawer). Esc closes, arrows navigate,
 // focus stays trapped inside; the opener restores focus on close.
 export function GalleryLightbox({ images, alt, index, onIndexChange, onClose }: GalleryLightboxProps) {
   const count = images.length;
