@@ -37,6 +37,9 @@ export function GalleryLightbox({ images, alt, index, onIndexChange, onClose }: 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
+      // Don't let the same keypress reach the cart drawer's document-level
+      // Escape listener — one press closes one layer.
+      e.stopPropagation();
       onClose();
       return;
     }
@@ -87,7 +90,12 @@ export function GalleryLightbox({ images, alt, index, onIndexChange, onClose }: 
       aria-label={`Photos of ${alt}`}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-[100] bg-ink/95 flex flex-col focus:outline-none"
+      onClick={(e) => {
+        // Tap/click anywhere that isn't a control (arrows, close, thumbnails)
+        // dismisses the viewer — one rule for photo, gutters and top bar.
+        if (!(e.target as HTMLElement).closest('button, ul')) onClose();
+      }}
+      className="fixed inset-0 z-[110] bg-ink/95 flex flex-col focus:outline-none"
       style={{ animation: 'blg-fade 0.2s ease-out both' }}
     >
       {/* Top bar: counter + close */}
@@ -100,14 +108,12 @@ export function GalleryLightbox({ images, alt, index, onIndexChange, onClose }: 
         </button>
       </div>
 
-      {/* Photo area — clicking the backdrop (not the photo) closes */}
+      {/* Photo area — swipe to navigate; clicks fall through to the dialog's
+          tap-to-dismiss handler above */}
       <div
         className="relative flex-1 min-h-0 mx-4"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
       >
         <Image
           src={images[index]}
