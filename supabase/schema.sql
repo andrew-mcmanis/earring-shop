@@ -6,9 +6,10 @@
 -- ============================================================
 
 create table if not exists categories (
-  slug        text primary key,
-  name        text not null,
-  sort_order  int  not null default 0
+  slug           text primary key,
+  name           text not null,
+  sort_order     int  not null default 0,
+  delivery_charge numeric(10,2) not null default 0
 );
 
 create table if not exists subcategories (
@@ -98,12 +99,14 @@ create table if not exists orders (
   customer_name  text not null,
   customer_email text not null,
   customer_phone text,
-  address        text not null,
+  address        text,                          -- null for pickup orders
   city           text,
   postcode       text,
   country        text not null default 'United Kingdom',
   notes          text,
   subtotal       numeric(10,2) not null default 0,
+  shipping       numeric(10,2) not null default 0,
+  fulfilment_method text not null default 'delivery',  -- delivery | pickup
   status         text not null default 'new',  -- new | made | posted | cancelled
   created_at     timestamptz not null default now()
 );
@@ -139,3 +142,18 @@ grant select on order_items to authenticated;
 grant all on orders to service_role;
 grant all on order_items to service_role;
 grant usage, select on all sequences in schema public to service_role;
+
+-- ============================================================
+-- Private shop settings (pickup address/note). Not readable by anon.
+-- ============================================================
+create table if not exists settings (
+  id             boolean primary key default true check (id),
+  pickup_address text,
+  pickup_note    text,
+  updated_at     timestamptz not null default now()
+);
+alter table settings enable row level security;
+create policy "admin read settings"  on settings for select using (auth.role() = 'authenticated');
+create policy "admin write settings" on settings for all    using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+grant select, insert, update on settings to authenticated;
+grant all on settings to service_role;

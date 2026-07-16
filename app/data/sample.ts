@@ -6,9 +6,9 @@
 import type { Category, Subcategory, Colour, Product } from './types';
 
 export const sampleCategories: Category[] = [
-  { slug: 'earrings', name: 'Earrings', sortOrder: 1 },
-  { slug: 'bookmarks', name: 'Bookmarks', sortOrder: 2 },
-  { slug: 'gifts', name: 'Gifts', sortOrder: 3 },
+  { slug: 'earrings', name: 'Earrings', sortOrder: 1, deliveryCharge: 3.5 },
+  { slug: 'bookmarks', name: 'Bookmarks', sortOrder: 2, deliveryCharge: 1.5 },
+  { slug: 'gifts', name: 'Gifts', sortOrder: 3, deliveryCharge: 2.5 },
 ];
 
 export const sampleSubcategories: Subcategory[] = [

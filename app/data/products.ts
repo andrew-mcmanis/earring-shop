@@ -62,10 +62,15 @@ export async function getCategories(): Promise<Category[]> {
     const supabase = createReadClient();
     const { data, error } = await supabase
       .from('categories')
-      .select('slug, name, sort_order')
+      .select('slug, name, sort_order, delivery_charge')
       .order('sort_order');
     if (!error && data) {
-      return data.map((c) => ({ slug: c.slug, name: c.name, sortOrder: c.sort_order ?? 0 }));
+      return data.map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        sortOrder: c.sort_order ?? 0,
+        deliveryCharge: Number(c.delivery_charge ?? 0),
+      }));
     }
     console.warn('[data] categories query failed, using sample data:', error?.message);
   }

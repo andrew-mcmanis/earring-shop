@@ -6,6 +6,8 @@ export interface Category {
   slug: string;
   name: string;
   sortOrder: number;
+  /** Delivery charge for items in this category, in £. */
+  deliveryCharge: number;
 }
 
 export interface Subcategory {
@@ -38,12 +40,15 @@ export interface Order {
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
-  address: string;
+  /** Delivery address; null for pickup orders. */
+  address: string | null;
   city: string | null;
   postcode: string | null;
   country: string;
   notes: string | null;
   subtotal: number;
+  shipping: number;
+  fulfilmentMethod: 'delivery' | 'pickup';
   status: OrderStatus;
   createdAt: string;
   items: OrderItem[];

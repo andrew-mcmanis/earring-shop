@@ -15,12 +15,14 @@ interface OrderRow {
   customer_name: string;
   customer_email: string;
   customer_phone: string | null;
-  address: string;
+  address: string | null;
   city: string | null;
   postcode: string | null;
   country: string;
   notes: string | null;
   subtotal: number | string;
+  shipping: number | string;
+  fulfilment_method: string;
   status: string;
   created_at: string;
   order_items: OrderItemRow[];
@@ -39,6 +41,8 @@ function mapOrder(r: OrderRow): Order {
     country: r.country,
     notes: r.notes,
     subtotal: Number(r.subtotal),
+    shipping: Number(r.shipping ?? 0),
+    fulfilmentMethod: r.fulfilment_method === 'pickup' ? 'pickup' : 'delivery',
     status: r.status as OrderStatus,
     createdAt: r.created_at,
     items: (r.order_items ?? []).map((i) => ({

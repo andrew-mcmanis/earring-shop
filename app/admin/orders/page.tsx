@@ -82,9 +82,23 @@ export default async function AdminOrdersPage() {
                         </span>
                       </li>
                     ))}
+                    <li className="flex items-center justify-between gap-3 font-body text-sm border-t border-cream-dark pt-2 mt-1">
+                      <span className="text-ink-light">Subtotal</span>
+                      <span className="text-ink-light tabular-nums">£{o.subtotal.toFixed(2)}</span>
+                    </li>
+                    <li className="flex items-center justify-between gap-3 font-body text-sm">
+                      <span className="text-ink-light capitalize">{o.fulfilmentMethod}</span>
+                      <span className="text-ink-light tabular-nums">
+                        {o.shipping > 0
+                          ? `+£${o.shipping.toFixed(2)} delivery`
+                          : o.fulfilmentMethod === 'pickup'
+                            ? 'Pickup'
+                            : 'Free delivery'}
+                      </span>
+                    </li>
                     <li className="flex items-center justify-between gap-3 font-body text-sm font-semibold border-t border-cream-dark pt-2 mt-1">
                       <span className="text-ink">Total</span>
-                      <span className="text-ink tabular-nums">£{o.subtotal.toFixed(2)}</span>
+                      <span className="text-ink tabular-nums">£{(o.subtotal + o.shipping).toFixed(2)}</span>
                     </li>
                   </ul>
 
@@ -97,9 +111,13 @@ export default async function AdminOrdersPage() {
                       </a>
                     </p>
                     {o.customerPhone && <p className="text-ink-light">{o.customerPhone}</p>}
-                    <p className="text-ink-light sm:col-span-2">
-                      {[o.address, o.city, o.postcode, o.country].filter(Boolean).join(', ')}
-                    </p>
+                    {o.fulfilmentMethod === 'pickup' ? (
+                      <p className="text-ink-light sm:col-span-2">Collection — no delivery address</p>
+                    ) : (
+                      <p className="text-ink-light sm:col-span-2">
+                        {[o.address, o.city, o.postcode, o.country].filter(Boolean).join(', ')}
+                      </p>
+                    )}
                     {o.notes && (
                       <p className="text-ink-light sm:col-span-2 mt-1">
                         <span className="font-medium text-ink">Notes:</span> {o.notes}
