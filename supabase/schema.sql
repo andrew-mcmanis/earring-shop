@@ -152,6 +152,7 @@ create table if not exists settings (
   pickup_note    text,
   updated_at     timestamptz not null default now()
 );
+insert into settings (id) values (true) on conflict (id) do nothing;
 alter table settings enable row level security;
 create policy "admin read settings"  on settings for select using (auth.role() = 'authenticated');
 create policy "admin write settings" on settings for all    using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
