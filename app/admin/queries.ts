@@ -5,6 +5,7 @@ export interface DashboardOrder {
   orderNumber: number;
   customerName: string;
   subtotal: number;
+  shipping: number;
   status: string;
   createdAt: string;
 }
@@ -42,7 +43,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from('colours').select('*', head),
       supabase
         .from('orders')
-        .select('id, order_number, customer_name, subtotal, status, created_at')
+        .select('id, order_number, customer_name, subtotal, shipping, status, created_at')
         .order('created_at', { ascending: false })
         .limit(5),
     ]);
@@ -57,6 +58,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         orderNumber: o.order_number,
         customerName: o.customer_name,
         subtotal: Number(o.subtotal),
+        shipping: Number(o.shipping ?? 0),
         status: o.status,
         createdAt: o.created_at,
       })),

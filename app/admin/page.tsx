@@ -48,7 +48,7 @@ export default async function AdminPage() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-8">
         <h2 className="font-heading text-4xl font-bold text-ink">Welcome back</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <Link
             href="/admin/products"
             className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
@@ -91,6 +91,14 @@ export default async function AdminPage() {
                 : `${stats.categoryCount} categories · ${stats.colourCount} colours`}
             </p>
           </Link>
+
+          <Link
+            href="/admin/delivery"
+            className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+          >
+            <h3 className="font-heading text-2xl font-bold text-ink">Delivery</h3>
+            <p className="font-body text-sm text-ink-light mt-1">Set delivery rates & collection.</p>
+          </Link>
         </div>
 
         <section aria-label="Latest orders" className="flex flex-col gap-3">
@@ -117,7 +125,7 @@ export default async function AdminPage() {
                   >
                     <span className="font-body text-sm font-semibold text-ink tabular-nums">BLG-{o.orderNumber}</span>
                     <span className="font-body text-sm text-ink flex-1 min-w-[8rem]">{o.customerName}</span>
-                    <span className="font-body text-sm font-semibold text-ink tabular-nums">£{o.subtotal.toFixed(2)}</span>
+                    <span className="font-body text-sm font-semibold text-ink tabular-nums">£{(o.subtotal + o.shipping).toFixed(2)}</span>
                     <span className="font-body text-xs font-medium capitalize bg-cream-dark border border-kraft-light text-ink-light px-2 py-0.5 rounded">
                       {o.status}
                     </span>
