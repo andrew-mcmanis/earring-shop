@@ -19,12 +19,22 @@ function RateRow({ category }: { category: Category }) {
   function save() {
     setError(null);
     setSaved(false);
+    const parsed = Number(value);
+    if (value.trim() === '' || Number.isNaN(parsed)) {
+      setError('Enter a charge (0 or more).');
+      return;
+    }
+    const rounded = Math.round(parsed * 100) / 100;
+    const submitted = value;
     startTransition(async () => {
-      const res = await setDeliveryCharge(category.slug, Number(value));
-      if (res.error) setError(res.error);
-      else {
+      const res = await setDeliveryCharge(category.slug, rounded);
+      if (res.error) {
+        setError(res.error);
+      } else {
         setSaved(true);
-        setValue(Number(value).toFixed(2));
+        // Only snap the box to the canonical 2dp form if the admin hasn't
+        // typed something newer while the save was in flight.
+        setValue((current) => (current === submitted ? rounded.toFixed(2) : current));
       }
     });
   }
@@ -44,6 +54,7 @@ function RateRow({ category }: { category: Category }) {
             setValue(e.target.value);
             setSaved(false);
           }}
+          disabled={isPending}
           className={`${inputClass} w-24`}
           aria-label={`Delivery charge for ${category.name}`}
         />
