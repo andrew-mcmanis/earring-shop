@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import { getUnavailableProductIds } from '../lib/availability';
+import { getDeliveryRates } from '../lib/delivery';
 
 export interface CartItem {
   id: string;
@@ -97,6 +98,7 @@ interface CartContextValue {
   clear: () => void;
   unavailableIds: Set<string>;
   refreshAvailability: () => Promise<void>;
+  shippingEstimate: number;
   isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
@@ -109,7 +111,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
+  const [deliveryRates, setDeliveryRates] = useState<Record<string, number>>({});
   const availabilityRequest = useRef(0);
+  const deliveryRatesFetched = useRef(false);
 
   // Load any persisted cart once on mount (client-only API).
   useEffect(() => {
@@ -171,13 +175,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   // Re-check availability whenever the cart opens (and when items change
-  // while it is open). The localStorage snapshot may be stale.
+  // while it is open). The localStorage snapshot may be stale. Also fetch
+  // delivery rates once per session — guarded by a ref (not the state's
+  // shape) because an empty-but-legitimate `{}` result (e.g. pre-migration
+  // DB) is a new object reference every fetch, which would otherwise keep
+  // re-triggering this effect forever via the `deliveryRates` dependency.
   useEffect(() => {
-    if (isOpen) void refreshAvailability();
+    if (!isOpen) return;
+    void refreshAvailability();
+    if (!deliveryRatesFetched.current) {
+      deliveryRatesFetched.current = true;
+      getDeliveryRates()
+        .then(setDeliveryRates)
+        .catch(() => {});
+    }
   }, [isOpen, refreshAvailability]);
 
   const totalCount = items.reduce((n, i) => n + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const shippingEstimate = items.reduce(
+    (max, i) => Math.max(max, deliveryRates[i.categorySlug] ?? 0),
+    0,
+  );
 
   return (
     <CartContext.Provider
@@ -191,6 +210,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clear,
         unavailableIds,
         refreshAvailability,
+        shippingEstimate,
         isOpen,
         openCart,
         closeCart,

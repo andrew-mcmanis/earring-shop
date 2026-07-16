@@ -7,7 +7,18 @@ import { ProductIcon } from './ProductIcon';
 import { ProductImage } from './ProductImage';
 
 export function CartDrawer() {
-  const { items, isOpen, closeCart, setQty, removeItem, clear, totalCount, totalPrice, unavailableIds } = useCart();
+  const {
+    items,
+    isOpen,
+    closeCart,
+    setQty,
+    removeItem,
+    clear,
+    totalCount,
+    totalPrice,
+    unavailableIds,
+    shippingEstimate,
+  } = useCart();
   const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -167,7 +178,9 @@ export function CartDrawer() {
               </span>
             </div>
             <p className="font-body text-xs text-ink-light">
-              Shipping is arranged after checkout.
+              {shippingEstimate > 0
+                ? `Delivery from £${shippingEstimate.toFixed(2)} · or free pickup at checkout`
+                : 'Delivery calculated at checkout · or free pickup'}
             </p>
             {hasUnavailable ? (
               <span
