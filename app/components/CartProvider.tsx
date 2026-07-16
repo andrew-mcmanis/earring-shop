@@ -113,7 +113,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
   const [deliveryRates, setDeliveryRates] = useState<Record<string, number>>({});
   const availabilityRequest = useRef(0);
-  const deliveryRatesFetched = useRef(false);
+  const deliveryRatesFetched = useRef<'idle' | 'pending' | 'done'>('idle');
 
   // Load any persisted cart once on mount (client-only API).
   useEffect(() => {
@@ -183,11 +183,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isOpen) return;
     void refreshAvailability();
-    if (!deliveryRatesFetched.current) {
-      deliveryRatesFetched.current = true;
+    if (deliveryRatesFetched.current === 'idle') {
+      deliveryRatesFetched.current = 'pending';
       getDeliveryRates()
-        .then(setDeliveryRates)
-        .catch(() => {});
+        .then((rates) => {
+          deliveryRatesFetched.current = 'done';
+          setDeliveryRates(rates);
+        })
+        .catch(() => {
+          deliveryRatesFetched.current = 'idle'; // allow retry on next cart open
+        });
     }
   }, [isOpen, refreshAvailability]);
 
