@@ -10,6 +10,8 @@ export interface PlaceOrderState {
   message?: string;
   reference?: string;
   fieldErrors?: Record<string, string>;
+  /** Set only for a successful pickup order — the private collection details. */
+  collection?: { address: string | null; note: string | null };
 }
 
 interface OrderLine {
@@ -37,12 +39,13 @@ export async function placeOrder(
   const city = str(formData, 'city');
   const postcode = str(formData, 'postcode');
   const notes = str(formData, 'notes');
+  const isPickup = str(formData, 'fulfilment_method') === 'pickup';
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = 'Please enter your name.';
   if (!email) fieldErrors.email = 'Please enter your email.';
   else if (!EMAIL_RE.test(email)) fieldErrors.email = 'Please enter a valid email address.';
-  if (!address) fieldErrors.address = 'Please enter a delivery address.';
+  if (!isPickup && !address) fieldErrors.address = 'Please enter a delivery address.';
 
   // Rebuild the order from the authoritative catalogue — never trust
   // client-supplied names or prices.
@@ -76,6 +79,7 @@ export async function placeOrder(
   }
   const items: OrderLine[] = [];
   const soldOutNames: string[] = [];
+  const orderedCategories = new Set<string>();
   for (const entry of cart) {
     const product = catalogue.find((p) => p.id === entry?.id);
     const quantity = Math.max(0, Math.floor(Number(entry?.qty) || 0));
@@ -90,6 +94,7 @@ export async function placeOrder(
       unitPrice: product.price,
       quantity,
     });
+    orderedCategories.add(product.categorySlug);
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -108,6 +113,20 @@ export async function placeOrder(
   }
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
+
+  // Delivery = the highest category rate among the ordered items (one parcel);
+  // pickup = £0. Rates read from the DB here, never trusted from the client.
+  let shipping = 0;
+  if (!isPickup && isSupabaseConfigured() && orderedCategories.size > 0) {
+    const rateClient = createReadClient();
+    const { data: cats } = await rateClient
+      .from('categories')
+      .select('slug, delivery_charge')
+      .in('slug', [...orderedCategories]);
+    if (cats) {
+      shipping = cats.reduce((max, c) => Math.max(max, Number(c.delivery_charge ?? 0)), 0);
+    }
+  }
 
   // If the database isn't configured, log the order so nothing is lost and the
   // customer still gets a confirmation.
@@ -129,12 +148,14 @@ export async function placeOrder(
         customer_name: name,
         customer_email: email,
         customer_phone: phone || null,
-        address,
-        city: city || null,
-        postcode: postcode || null,
+        address: isPickup ? null : address,
+        city: isPickup ? null : city || null,
+        postcode: isPickup ? null : postcode || null,
         country: 'United Kingdom',
         notes: notes || null,
         subtotal,
+        shipping,
+        fulfilment_method: isPickup ? 'pickup' : 'delivery',
         status: 'new',
       })
       .select('id, order_number')
@@ -175,7 +196,16 @@ export async function placeOrder(
       });
     }
 
-    return { status: 'success', reference: `BLG-${order.order_number}` };
+    let collection: { address: string | null; note: string | null } | undefined;
+    if (isPickup) {
+      const { data: settings } = await supabase
+        .from('settings')
+        .select('pickup_address, pickup_note')
+        .eq('id', true)
+        .maybeSingle();
+      collection = { address: settings?.pickup_address ?? null, note: settings?.pickup_note ?? null };
+    }
+    return { status: 'success', reference: `BLG-${order.order_number}`, collection };
   } catch (err) {
     // Don't break checkout on a transient/setup failure — log the full order
     // (recoverable) and still confirm to the customer.
