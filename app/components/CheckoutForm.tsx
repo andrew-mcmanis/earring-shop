@@ -58,15 +58,27 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
   const { items, totalPrice, totalCount, clear, unavailableIds, refreshAvailability } = useCart();
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(placeOrder, initialState);
+  const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
 
   // On success, clear the cart and move to the confirmation page.
   useEffect(() => {
-    if (state.status === 'success') {
-      clear();
-      const q = state.reference ? `?ref=${encodeURIComponent(state.reference)}` : '';
-      router.push(`/checkout/success${q}`);
+    if (state.status !== 'success') return;
+    try {
+      sessionStorage.setItem(
+        'blg-last-order',
+        JSON.stringify({
+          reference: state.reference ?? null,
+          method,
+          collection: state.collection ?? null,
+        }),
+      );
+    } catch {
+      // sessionStorage unavailable — the success page falls back to the ref + generic copy.
     }
-  }, [state, clear, router]);
+    clear();
+    const q = state.reference ? `?ref=${encodeURIComponent(state.reference)}` : '';
+    router.push(`/checkout/success${q}`);
+  }, [state, method, clear, router]);
 
   // Re-check availability when the checkout loads and whenever the cart changes.
   useEffect(() => {
@@ -75,7 +87,6 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
 
   const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
 
-  const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
   const shipping =
     method === 'pickup'
       ? 0

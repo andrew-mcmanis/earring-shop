@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Header } from '../../components/Header';
 import { Footer } from '../../components/Footer';
+import { OrderConfirmation } from './OrderConfirmation';
 
 export const metadata: Metadata = {
   title: 'Order received',
@@ -28,17 +29,7 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
 
         <h1 className="font-heading text-4xl sm:text-5xl font-bold text-ink">Thank you — order received!</h1>
 
-        {ref && (
-          <p className="font-body text-sm text-ink-light">
-            Your reference is{' '}
-            <span className="font-semibold text-ink tabular-nums">{ref}</span>.
-          </p>
-        )}
-
-        <p className="font-body text-base text-ink-light max-w-md leading-relaxed">
-          We&apos;ll be in touch by email shortly to confirm payment and delivery. Keep an eye
-          on your inbox.
-        </p>
+        <OrderConfirmation fallbackRef={ref} />
 
         <Link
           href="/"

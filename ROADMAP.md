@@ -129,8 +129,8 @@ Make it production-ready, then flip the switch.
 
 ## Decisions the owner needs to make
 
-1. **Shipping model** — free / flat-rate £? / arranged separately. _Blocks Phase 2
-   order totals + checkout copy._
+1. **Shipping model** — RESOLVED (2026-07-15): per-category rates (highest wins
+   for mixed baskets) + free pickup, set on the `/admin/delivery` page. Built.
 2. **Custom domain** — which domain. _Blocks Phase 3 + branded email sender._
 3. **Owner email timing** — fire on **payment success** (recommended, consistent)
    or at order placement (earlier visibility).
@@ -205,6 +205,13 @@ Decided 2026-06-13 — built **with** Stripe, not before.
   decision — until verified, use Resend's onboarding/test sender).
 - **Resilient + non-blocking** — wrap in try/catch and log; the order is already
   saved + paid. Plain, on-brand HTML (no flowery copy).
+- **Fulfilment details in the email** — the confirmation must include the
+  delivery address for delivery orders, or the collection address + note for
+  pickup orders. The checkout flow already captures the method (`fulfilment_method`
+  on the order), so read the private `settings` table (`pickup_address` /
+  `pickup_note`) at send time for pickup orders rather than trusting anything
+  client-supplied — the same pattern `placeOrder` already uses (see
+  `app/lib/orders.ts` and `app/checkout/success/OrderConfirmation.tsx`).
 
 ## Address handling — Option A (locked 2026-06-09)
 
