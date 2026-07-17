@@ -149,6 +149,7 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
                 <input
                   type="radio"
                   name="fulfilment_choice"
+                  value={m}
                   checked={method === m}
                   onChange={() => setMethod(m)}
                   className="h-4 w-4 accent-kraft cursor-pointer"

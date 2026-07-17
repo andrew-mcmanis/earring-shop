@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CheckoutForm } from '../components/CheckoutForm';
-import { getCategories } from '../data/products';
+import { getDeliveryRates } from '../lib/delivery';
 
 export const metadata: Metadata = {
   title: 'Checkout',
@@ -11,9 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
-  const categories = await getCategories();
-  const deliveryRates: Record<string, number> = {};
-  for (const c of categories) deliveryRates[c.slug] = c.deliveryCharge;
+  const deliveryRates = await getDeliveryRates();
 
   return (
     <>
