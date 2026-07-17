@@ -179,7 +179,7 @@ export function CartDrawer() {
             </div>
             <p className="font-body text-xs text-ink-light">
               {shippingEstimate > 0
-                ? `Delivery from £${shippingEstimate.toFixed(2)} · or free pickup at checkout`
+                ? `Delivery £${shippingEstimate.toFixed(2)} · or free pickup at checkout`
                 : 'Delivery calculated at checkout · or free pickup'}
             </p>
             {hasUnavailable ? (

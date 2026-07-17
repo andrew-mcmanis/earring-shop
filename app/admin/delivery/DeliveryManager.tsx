@@ -152,8 +152,8 @@ export function DeliveryManager({
       <section className="bg-white border border-cream-dark rounded-lg p-5">
         <h2 className="font-heading text-2xl font-bold text-ink mb-1">Delivery rates</h2>
         <p className="font-body text-sm text-ink-light mb-4">
-          A charge per category. A basket spanning categories pays the highest single rate (it
-          posts as one parcel). New categories you add appear here automatically.
+          A charge per category. Each item in an order is charged its category&apos;s rate, and
+          they&apos;re added together. New categories you add appear here automatically.
         </p>
         {categoriesError ? (
           <p role="alert" className="font-body text-sm text-red-600">

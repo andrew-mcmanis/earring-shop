@@ -199,7 +199,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const totalCount = items.reduce((n, i) => n + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   const shippingEstimate = items.reduce(
-    (max, i) => Math.max(max, deliveryRates[i.categorySlug] ?? 0),
+    (sum, i) => sum + (deliveryRates[i.categorySlug] ?? 0) * i.qty,
     0,
   );
 

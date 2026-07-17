@@ -21,6 +21,7 @@ interface OrderLine {
   name: string;
   unitPrice: number;
   quantity: number;
+  categorySlug: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,6 +96,7 @@ export async function placeOrder(
       name: product.name,
       unitPrice: product.price,
       quantity,
+      categorySlug: product.categorySlug,
     });
     orderedCategories.add(product.categorySlug);
   }
@@ -116,8 +118,8 @@ export async function placeOrder(
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
 
-  // Delivery = the highest category rate among the ordered items (one parcel);
-  // pickup = £0. Rates read from the DB here, never trusted from the client.
+  // Delivery = each item's category rate, summed across the basket (charged per
+  // item); pickup = £0. Rates read from the DB here, never trusted from the client.
   let shipping = 0;
   if (!isPickup && isSupabaseConfigured() && orderedCategories.size > 0) {
     const rateClient = createReadClient();
@@ -129,7 +131,8 @@ export async function placeOrder(
       console.error('[order] category rate lookup failed — defaulting shipping to 0:', ratesError.message);
     }
     if (cats) {
-      shipping = cats.reduce((max, c) => Math.max(max, Number(c.delivery_charge ?? 0)), 0);
+      const rates = new Map(cats.map((c) => [c.slug, Number(c.delivery_charge ?? 0)]));
+      shipping = items.reduce((sum, l) => sum + (rates.get(l.categorySlug) ?? 0) * l.quantity, 0);
     }
   }
 

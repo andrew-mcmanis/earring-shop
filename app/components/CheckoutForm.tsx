@@ -90,7 +90,7 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
   const shipping =
     method === 'pickup'
       ? 0
-      : items.reduce((max, i) => Math.max(max, deliveryRates[i.categorySlug] ?? 0), 0);
+      : items.reduce((sum, i) => sum + (deliveryRates[i.categorySlug] ?? 0) * i.qty, 0);
   const total = totalPrice + shipping;
 
   if (state.status === 'success') {

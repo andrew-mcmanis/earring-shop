@@ -129,8 +129,9 @@ Make it production-ready, then flip the switch.
 
 ## Decisions the owner needs to make
 
-1. **Shipping model** — RESOLVED (2026-07-15): per-category rates (highest wins
-   for mixed baskets) + free pickup, set on the `/admin/delivery` page. Built.
+1. **Shipping model** — RESOLVED (2026-07-15): per-category rates charged per
+   item (summed across the basket) + free pickup, set on the `/admin/delivery`
+   page. Built.
 2. **Custom domain** — which domain. _Blocks Phase 3 + branded email sender._
 3. **Owner email timing** — fire on **payment success** (recommended, consistent)
    or at order placement (earlier visibility).
