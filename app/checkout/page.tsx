@@ -3,13 +3,18 @@ import type { Metadata } from 'next';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CheckoutForm } from '../components/CheckoutForm';
+import { getCategories } from '../data/products';
 
 export const metadata: Metadata = {
   title: 'Checkout',
   robots: { index: false, follow: false },
 };
 
-export default function CheckoutPage() {
+export default async function CheckoutPage() {
+  const categories = await getCategories();
+  const deliveryRates: Record<string, number> = {};
+  for (const c of categories) deliveryRates[c.slug] = c.deliveryCharge;
+
   return (
     <>
       <Header />
@@ -29,7 +34,7 @@ export default function CheckoutPage() {
 
         <h1 className="font-heading text-4xl sm:text-5xl font-bold text-ink mb-8">Checkout</h1>
 
-        <CheckoutForm />
+        <CheckoutForm deliveryRates={deliveryRates} />
       </div>
 
       <Footer />

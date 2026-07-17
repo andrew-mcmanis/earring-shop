@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useCart } from './CartProvider';
 import { ProductIcon } from './ProductIcon';
 import { ProductImage } from './ProductImage';
@@ -54,7 +54,7 @@ function Field({
   );
 }
 
-export function CheckoutForm() {
+export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, number> }) {
   const { items, totalPrice, totalCount, clear, unavailableIds, refreshAvailability } = useCart();
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(placeOrder, initialState);
@@ -74,6 +74,13 @@ export function CheckoutForm() {
   }, [refreshAvailability]);
 
   const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
+
+  const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const shipping =
+    method === 'pickup'
+      ? 0
+      : items.reduce((max, i) => Math.max(max, deliveryRates[i.categorySlug] ?? 0), 0);
+  const total = totalPrice + shipping;
 
   if (state.status === 'success') {
     return (
@@ -108,6 +115,7 @@ export function CheckoutForm() {
           name="items"
           value={JSON.stringify(items.map((i) => ({ id: i.id, qty: i.qty })))}
         />
+        <input type="hidden" name="fulfilment_method" value={method} />
 
         {state.status === 'error' && state.message && (
           <div
@@ -128,12 +136,47 @@ export function CheckoutForm() {
         </fieldset>
 
         <fieldset className="flex flex-col gap-4 border-0 p-0 m-0">
-          <legend className="font-heading text-2xl font-bold text-ink mb-1">Delivery</legend>
-          <Field id="address" label="Address" required autoComplete="street-address" error={state.fieldErrors?.address} />
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field id="city" label="Town / City" autoComplete="address-level2" />
-            <Field id="postcode" label="Postcode" autoComplete="postal-code" />
+          <legend className="font-heading text-2xl font-bold text-ink mb-1">How to get it</legend>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            {(['delivery', 'pickup'] as const).map((m) => (
+              <label
+                key={m}
+                className={`flex-1 cursor-pointer rounded-lg border p-3 flex items-center gap-3 transition-colors duration-150 ${
+                  method === m ? 'border-kraft bg-kraft/5' : 'border-kraft-light hover:border-kraft'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="fulfilment_choice"
+                  checked={method === m}
+                  onChange={() => setMethod(m)}
+                  className="h-4 w-4 accent-kraft cursor-pointer"
+                />
+                <span className="font-body text-sm">
+                  <span className="font-medium text-ink">{m === 'delivery' ? 'Deliver' : 'Pick up'}</span>
+                  <span className="block text-xs text-ink-light">
+                    {m === 'delivery' ? 'Posted to your address' : 'Collect — free'}
+                  </span>
+                </span>
+              </label>
+            ))}
           </div>
+
+          {method === 'delivery' ? (
+            <>
+              <Field id="address" label="Address" required autoComplete="street-address" error={state.fieldErrors?.address} />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field id="city" label="Town / City" autoComplete="address-level2" />
+                <Field id="postcode" label="Postcode" autoComplete="postal-code" />
+              </div>
+            </>
+          ) : (
+            <p className="font-body text-sm text-ink-light bg-cream-dark rounded-lg px-4 py-3">
+              Collection details will be sent once your order&apos;s confirmed.
+            </p>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <label htmlFor="notes" className="font-body text-sm font-medium text-ink">
               Order notes <span className="text-ink-light font-normal">(optional)</span>
@@ -198,11 +241,23 @@ export function CheckoutForm() {
               </li>
             ))}
           </ul>
-          <div className="flex items-center justify-between border-t border-kraft-light pt-3">
-            <span className="font-body text-sm text-ink-light">Subtotal</span>
-            <span className="font-body text-xl font-semibold text-ink tabular-nums">
-              £{totalPrice.toFixed(2)}
-            </span>
+          <div className="flex flex-col gap-2 border-t border-kraft-light pt-3">
+            <div className="flex items-center justify-between">
+              <span className="font-body text-sm text-ink-light">Subtotal</span>
+              <span className="font-body text-sm text-ink tabular-nums">£{totalPrice.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-body text-sm text-ink-light">
+                {method === 'pickup' ? 'Collection' : 'Delivery'}
+              </span>
+              <span className="font-body text-sm text-ink tabular-nums">
+                {shipping > 0 ? `£${shipping.toFixed(2)}` : 'Free'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t border-kraft-light pt-2">
+              <span className="font-body text-sm font-semibold text-ink">Total</span>
+              <span className="font-body text-xl font-semibold text-ink tabular-nums">£{total.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       </aside>
