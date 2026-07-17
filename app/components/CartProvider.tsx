@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { getUnavailableProductIds } from '../lib/availability';
 import { getDeliveryRates } from '../lib/delivery';
+import { computeShipping } from '../lib/shipping';
 
 export interface CartItem {
   id: string;
@@ -198,10 +199,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalCount = items.reduce((n, i) => n + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const shippingEstimate = items.reduce(
-    (sum, i) => sum + (deliveryRates[i.categorySlug] ?? 0) * i.qty,
-    0,
-  );
+  const shippingEstimate = computeShipping(items, deliveryRates);
 
   return (
     <CartContext.Provider

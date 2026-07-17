@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import type { Category } from '../../data/types';
 import { setDeliveryCharge, updatePickupDetails } from './actions';
 import type { PickupDetails } from './queries';
@@ -16,6 +16,24 @@ function RateRow({ category }: { category: Category }) {
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  // useState only seeds once, so when a revalidation delivers a different
+  // saved rate (edited from another tab or device) the input must re-sync —
+  // otherwise a stale box could silently overwrite the newer value on Save.
+  // Skipped when the input already shows the server value (our own save
+  // landing), which keeps the "Saved" badge up.
+  const serverValue = category.deliveryCharge.toFixed(2);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const prevServer = useRef(serverValue);
+  useEffect(() => {
+    if (prevServer.current === serverValue) return;
+    prevServer.current = serverValue;
+    if (valueRef.current !== serverValue) {
+      setValue(serverValue);
+      setSaved(false);
+    }
+  }, [serverValue]);
+
   function save() {
     setError(null);
     setSaved(false);
@@ -24,7 +42,8 @@ function RateRow({ category }: { category: Category }) {
       setError('Enter a charge (0 or more).');
       return;
     }
-    const rounded = Math.round(parsed * 100) / 100;
+    // EPSILON nudge so x.xx5 inputs round up (1.005 → 1.01, not 1.00).
+    const rounded = Math.round((parsed + Number.EPSILON) * 100) / 100;
     const submitted = value;
     startTransition(async () => {
       const res = await setDeliveryCharge(category.slug, rounded);
@@ -78,6 +97,17 @@ function PickupCard({ pickup }: { pickup: PickupDetails }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // If the read failed, the fields would be blank — offering a save here could
+  // silently wipe the real stored address. Fail honestly instead.
+  if (pickup.error) {
+    return (
+      <p role="alert" className="font-body text-sm text-red-600">
+        Couldn&apos;t load your collection details just now — refresh to try again. Saving is
+        disabled so nothing gets overwritten.
+      </p>
+    );
+  }
 
   function save() {
     setError(null);

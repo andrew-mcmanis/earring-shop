@@ -10,21 +10,29 @@ interface LastOrder {
 
 export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
   const [order, setOrder] = useState<LastOrder | null>(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem('blg-last-order');
-      if (raw) setOrder(JSON.parse(raw) as LastOrder);
+      if (raw) {
+        setOrder(JSON.parse(raw) as LastOrder);
+        // One-shot handoff: don't leave the private collection address sitting
+        // in storage after it has been shown (shared/public machines).
+        sessionStorage.removeItem('blg-last-order');
+      }
     } catch {
       // ignore — fall back to the generic message below
     }
+    setChecked(true);
   }, []);
 
-  // Only trust the cached payload when it belongs to the order this page is for.
-  // Otherwise a stale payload (shared device / old bookmark / different ?ref=)
-  // could show a previous order's private collection address.
+  // Only trust the cached payload when it belongs to the order this page is
+  // for: either the references match, or neither side has one (the demo-mode
+  // and save-failure success paths never issue a reference). A stale payload
+  // from a different order always carries a mismatched reference.
   const matchedOrder =
-    order && fallbackRef && order.reference === fallbackRef ? order : null;
+    order && (order.reference ?? null) === (fallbackRef ?? null) ? order : null;
   const reference = matchedOrder?.reference ?? fallbackRef;
 
   return (
@@ -36,7 +44,9 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
         </p>
       )}
 
-      {matchedOrder?.method === 'pickup' && matchedOrder.collection?.address ? (
+      {/* Wait for the sessionStorage read before asserting a method — otherwise
+          every pickup confirmation briefly flashes delivery-flavoured copy. */}
+      {!checked ? null : matchedOrder?.method === 'pickup' && matchedOrder.collection?.address ? (
         <div className="font-body text-base text-ink-light max-w-md leading-relaxed flex flex-col gap-2">
           <p>Your order is for collection. You can pick it up from:</p>
           <p className="whitespace-pre-line font-medium text-ink bg-cream-dark rounded-lg px-4 py-3">

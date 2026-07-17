@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { createServerSupabase } from '../../lib/supabase-server';
+import { requireUser } from '../../lib/admin-auth';
 
 export interface LabelResult {
   ok: boolean;
@@ -21,15 +21,6 @@ function slugify(s: string): string {
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
-
-async function requireUser(): Promise<SupabaseClient> {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authorised.');
-  return supabase;
-}
 
 async function uniqueSlug(
   supabase: SupabaseClient,

@@ -1,21 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { createServerSupabase } from '../../lib/supabase-server';
+import { requireUser } from '../../lib/admin-auth';
 
 export interface DeliveryResult {
   ok: boolean;
   error?: string;
-}
-
-async function requireUser(): Promise<SupabaseClient> {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authorised.');
-  return supabase;
 }
 
 export async function setDeliveryCharge(slug: string, charge: number): Promise<DeliveryResult> {
@@ -28,9 +18,9 @@ export async function setDeliveryCharge(slug: string, charge: number): Promise<D
     .update({ delivery_charge: charge })
     .eq('slug', slug);
   if (error) return { ok: false, error: error.message };
+  // /checkout renders per-request and the cart fetches rates live, so only the
+  // admin page itself needs revalidating.
   revalidatePath('/admin/delivery');
-  revalidatePath('/');
-  revalidatePath('/checkout');
   return { ok: true };
 }
 

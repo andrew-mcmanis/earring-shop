@@ -4,19 +4,23 @@ import type { Category } from '../../data/types';
 export interface PickupDetails {
   address: string;
   note: string;
+  /** True when the read failed — the editor must not offer a save that could
+   *  overwrite the real stored details with these blanks. */
+  error: boolean;
 }
 
 export async function getPickupDetails(): Promise<PickupDetails> {
   try {
     const supabase = await createServerSupabase();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('settings')
       .select('pickup_address, pickup_note')
       .eq('id', true)
       .maybeSingle();
-    return { address: data?.pickup_address ?? '', note: data?.pickup_note ?? '' };
+    if (error) return { address: '', note: '', error: true };
+    return { address: data?.pickup_address ?? '', note: data?.pickup_note ?? '', error: false };
   } catch {
-    return { address: '', note: '' };
+    return { address: '', note: '', error: true };
   }
 }
 

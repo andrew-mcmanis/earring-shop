@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { requireUser as requireUserOrThrow } from '../../lib/admin-auth';
 import { createServerSupabase } from '../../lib/supabase-server';
 import { createServiceClient } from '../../lib/supabase';
 import { MAX_PRODUCT_PHOTOS, MAX_PHOTO_BYTES } from '../../data/types';
@@ -38,13 +39,13 @@ function str(formData: FormData, key: string): string {
   return typeof v === 'string' ? v.trim() : '';
 }
 
+// Product actions run from full-page forms, so a login redirect beats a throw.
 async function requireUser() {
-  const supabase = await createServerSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/admin/login');
-  return supabase;
+  try {
+    return await requireUserOrThrow();
+  } catch {
+    redirect('/admin/login');
+  }
 }
 
 async function parseProduct(formData: FormData): Promise<

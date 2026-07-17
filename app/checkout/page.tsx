@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Rates must be read per-request. A static prerender that hit a DB error would
+// bake "Free" delivery into the page indefinitely, while placeOrder still
+// charges the real rate — the money page must never show a stale quote.
+export const dynamic = 'force-dynamic';
+
 export default async function CheckoutPage() {
   const deliveryRates = await getDeliveryRates();
 

@@ -15,7 +15,10 @@ create table if not exists settings (
 insert into settings (id) values (true) on conflict (id) do nothing;
 
 alter table settings enable row level security;
+-- CREATE POLICY has no IF NOT EXISTS, so drop first to keep re-runs safe.
+drop policy if exists "admin read settings" on settings;
 create policy "admin read settings"  on settings for select using (auth.role() = 'authenticated');
+drop policy if exists "admin write settings" on settings;
 create policy "admin write settings" on settings for all    using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
 -- Deliberately NOT granted to anon: the pickup address is never publicly readable.
 grant select, insert, update on settings to authenticated;

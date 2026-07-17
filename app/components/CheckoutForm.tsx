@@ -7,6 +7,7 @@ import { useCart } from './CartProvider';
 import { ProductIcon } from './ProductIcon';
 import { ProductImage } from './ProductImage';
 import { placeOrder, type PlaceOrderState } from '../lib/orders';
+import { computeShipping } from '../lib/shipping';
 
 const initialState: PlaceOrderState = { status: 'idle' };
 
@@ -87,10 +88,7 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
 
   const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
 
-  const shipping =
-    method === 'pickup'
-      ? 0
-      : items.reduce((sum, i) => sum + (deliveryRates[i.categorySlug] ?? 0) * i.qty, 0);
+  const shipping = method === 'pickup' ? 0 : computeShipping(items, deliveryRates);
   const total = totalPrice + shipping;
 
   if (state.status === 'success') {
@@ -176,15 +174,18 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
             ))}
           </div>
 
-          {method === 'delivery' ? (
-            <>
-              <Field id="address" label="Address" required autoComplete="street-address" error={state.fieldErrors?.address} />
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field id="city" label="Town / City" autoComplete="address-level2" />
-                <Field id="postcode" label="Postcode" autoComplete="postal-code" />
-              </div>
-            </>
-          ) : (
+          {/* Keep the address fields mounted (just hidden for pickup) so anything
+              the customer typed survives toggling Deliver ↔ Pick up. The server
+              nulls the address for pickup orders, so the hidden values are
+              never stored. */}
+          <div className={method === 'delivery' ? 'flex flex-col gap-4' : 'hidden'}>
+            <Field id="address" label="Address" required autoComplete="street-address" error={state.fieldErrors?.address} />
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field id="city" label="Town / City" autoComplete="address-level2" />
+              <Field id="postcode" label="Postcode" autoComplete="postal-code" />
+            </div>
+          </div>
+          {method === 'pickup' && (
             <p className="font-body text-sm text-ink-light bg-cream-dark rounded-lg px-4 py-3">
               Collection details will be sent once your order&apos;s confirmed.
             </p>

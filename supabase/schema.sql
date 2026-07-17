@@ -106,9 +106,12 @@ create table if not exists orders (
   notes          text,
   subtotal       numeric(10,2) not null default 0,
   shipping       numeric(10,2) not null default 0,
-  fulfilment_method text not null default 'delivery',  -- delivery | pickup
+  fulfilment_method text not null default 'delivery'
+                 check (fulfilment_method in ('delivery', 'pickup')),
   status         text not null default 'new',  -- new | made | posted | cancelled
-  created_at     timestamptz not null default now()
+  created_at     timestamptz not null default now(),
+  -- A delivery order must carry an address (pickup orders store null).
+  check (fulfilment_method = 'pickup' or address is not null)
 );
 
 create table if not exists order_items (
