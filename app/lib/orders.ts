@@ -119,10 +119,13 @@ export async function placeOrder(
   let shipping = 0;
   if (!isPickup && isSupabaseConfigured() && orderedCategories.size > 0) {
     const rateClient = createReadClient();
-    const { data: cats } = await rateClient
+    const { data: cats, error: ratesError } = await rateClient
       .from('categories')
       .select('slug, delivery_charge')
       .in('slug', [...orderedCategories]);
+    if (ratesError) {
+      console.error('[order] category rate lookup failed — defaulting shipping to 0:', ratesError.message);
+    }
     if (cats) {
       shipping = cats.reduce((max, c) => Math.max(max, Number(c.delivery_charge ?? 0)), 0);
     }
@@ -136,6 +139,8 @@ export async function placeOrder(
       email,
       items,
       subtotal,
+      shipping,
+      fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     });
     return { status: 'success' };
   }
@@ -198,11 +203,14 @@ export async function placeOrder(
 
     let collection: { address: string | null; note: string | null } | undefined;
     if (isPickup) {
-      const { data: settings } = await supabase
+      const { data: settings, error: settingsError } = await supabase
         .from('settings')
         .select('pickup_address, pickup_note')
         .eq('id', true)
         .maybeSingle();
+      if (settingsError) {
+        console.error('[order] pickup settings read failed — collection details unavailable:', settingsError.message);
+      }
       collection = { address: settings?.pickup_address ?? null, note: settings?.pickup_note ?? null };
     }
     return { status: 'success', reference: `BLG-${order.order_number}`, collection };
@@ -219,6 +227,8 @@ export async function placeOrder(
       notes,
       items,
       subtotal,
+      shipping,
+      fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     });
     return { status: 'success' };
   }
