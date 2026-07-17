@@ -1,57 +1,31 @@
 import { createServerSupabase } from '../../lib/supabase-server';
-import type { Category } from '../../data/types';
 
-export interface PickupDetails {
+export interface DeliverySettings {
+  /** Flat delivery base price (£): first item full, each extra 50%. */
+  base: number;
   address: string;
   note: string;
   /** True when the read failed — the editor must not offer a save that could
-   *  overwrite the real stored details with these blanks. */
+   *  overwrite the real stored values with these blanks. */
   error: boolean;
 }
 
-export async function getPickupDetails(): Promise<PickupDetails> {
+export async function getDeliverySettings(): Promise<DeliverySettings> {
   try {
     const supabase = await createServerSupabase();
     const { data, error } = await supabase
       .from('settings')
-      .select('pickup_address, pickup_note')
+      .select('delivery_base, pickup_address, pickup_note')
       .eq('id', true)
       .maybeSingle();
-    if (error) return { address: '', note: '', error: true };
-    return { address: data?.pickup_address ?? '', note: data?.pickup_note ?? '', error: false };
-  } catch {
-    return { address: '', note: '', error: true };
-  }
-}
-
-export interface DeliveryCategoriesResult {
-  categories: Category[];
-  error: boolean;
-}
-
-/**
- * Categories for the rate editor, read on the admin's authenticated session.
- * Fails honestly (empty + error flag) rather than falling back to sample data —
- * the owner must never edit fabricated categories.
- */
-export async function getDeliveryCategories(): Promise<DeliveryCategoriesResult> {
-  try {
-    const supabase = await createServerSupabase();
-    const { data, error } = await supabase
-      .from('categories')
-      .select('slug, name, sort_order, delivery_charge')
-      .order('sort_order');
-    if (error || !data) return { categories: [], error: true };
+    if (error) return { base: 0, address: '', note: '', error: true };
     return {
-      categories: data.map((c) => ({
-        slug: c.slug,
-        name: c.name,
-        sortOrder: c.sort_order ?? 0,
-        deliveryCharge: Number(c.delivery_charge ?? 0),
-      })),
+      base: Number(data?.delivery_base ?? 0),
+      address: data?.pickup_address ?? '',
+      note: data?.pickup_note ?? '',
       error: false,
     };
   } catch {
-    return { categories: [], error: true };
+    return { base: 0, address: '', note: '', error: true };
   }
 }

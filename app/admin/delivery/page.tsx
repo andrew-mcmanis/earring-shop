@@ -1,15 +1,12 @@
 import Link from 'next/link';
 import { AdminHeader } from '../AdminHeader';
-import { getDeliveryCategories, getPickupDetails } from './queries';
+import { getDeliverySettings } from './queries';
 import { DeliveryManager } from './DeliveryManager';
 
 export const metadata = { title: 'Delivery · Admin' };
 
 export default async function DeliveryPage() {
-  const [{ categories, error: categoriesError }, pickup] = await Promise.all([
-    getDeliveryCategories(),
-    getPickupDetails(),
-  ]);
+  const settings = await getDeliverySettings();
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -26,10 +23,10 @@ export default async function DeliveryPage() {
         </Link>
         <h1 className="font-heading text-4xl font-bold text-ink">Delivery</h1>
         <p className="font-body text-sm text-ink-light mt-1 mb-8 max-w-prose">
-          Set a delivery charge for each category, and the collection details customers see once
-          they order a pickup.
+          Set your delivery price and the collection details customers see once they order a
+          pickup.
         </p>
-        <DeliveryManager categories={categories} categoriesError={categoriesError} pickup={pickup} />
+        <DeliveryManager settings={settings} />
       </main>
     </div>
   );

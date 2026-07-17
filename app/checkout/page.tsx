@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CheckoutForm } from '../components/CheckoutForm';
-import { getDeliveryRates } from '../lib/delivery';
+import { getDeliveryBase } from '../lib/delivery';
 
 export const metadata: Metadata = {
   title: 'Checkout',
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function CheckoutPage() {
-  const deliveryRates = await getDeliveryRates();
+  const deliveryBase = await getDeliveryBase();
 
   return (
     <>
@@ -37,7 +37,7 @@ export default async function CheckoutPage() {
 
         <h1 className="font-heading text-4xl sm:text-5xl font-bold text-ink mb-8">Checkout</h1>
 
-        <CheckoutForm deliveryRates={deliveryRates} />
+        <CheckoutForm deliveryBase={deliveryBase} />
       </div>
 
       <Footer />

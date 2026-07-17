@@ -6,8 +6,6 @@ export interface Category {
   slug: string;
   name: string;
   sortOrder: number;
-  /** Delivery charge for items in this category, in £. */
-  deliveryCharge: number;
 }
 
 export interface Subcategory {

@@ -8,18 +8,17 @@ export interface DeliveryResult {
   error?: string;
 }
 
-export async function setDeliveryCharge(slug: string, charge: number): Promise<DeliveryResult> {
+export async function setDeliveryBase(price: number): Promise<DeliveryResult> {
   const supabase = await requireUser();
-  if (!Number.isFinite(charge) || charge < 0 || charge > 1000) {
-    return { ok: false, error: 'Enter a valid charge between £0 and £1000.' };
+  if (!Number.isFinite(price) || price < 0 || price > 1000) {
+    return { ok: false, error: 'Enter a valid price between £0 and £1000.' };
   }
   const { error } = await supabase
-    .from('categories')
-    .update({ delivery_charge: charge })
-    .eq('slug', slug);
+    .from('settings')
+    .upsert({ id: true, delivery_base: price, updated_at: new Date().toISOString() });
   if (error) return { ok: false, error: error.message };
-  // /checkout renders per-request and the cart fetches rates live, so only the
-  // admin page itself needs revalidating.
+  // /checkout renders per-request and the cart fetches the base live, so only
+  // the admin page itself needs revalidating.
   revalidatePath('/admin/delivery');
   return { ok: true };
 }

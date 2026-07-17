@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import { getUnavailableProductIds } from '../lib/availability';
-import { getDeliveryRates } from '../lib/delivery';
+import { getDeliveryBase } from '../lib/delivery';
 import { computeShipping } from '../lib/shipping';
 
 export interface CartItem {
@@ -112,9 +112,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set());
-  const [deliveryRates, setDeliveryRates] = useState<Record<string, number>>({});
+  const [deliveryBase, setDeliveryBase] = useState(0);
   const availabilityRequest = useRef(0);
-  const deliveryRatesFetched = useRef<'idle' | 'pending' | 'done'>('idle');
+  const deliveryBaseFetched = useRef<'idle' | 'pending' | 'done'>('idle');
 
   // Load any persisted cart once on mount (client-only API).
   useEffect(() => {
@@ -176,30 +176,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   // Re-check availability whenever the cart opens (and when items change
-  // while it is open). The localStorage snapshot may be stale. Also fetch
-  // delivery rates once per session — guarded by a ref (not the state's
-  // shape) because an empty-but-legitimate `{}` result (e.g. pre-migration
-  // DB) is a new object reference every fetch, which would otherwise keep
-  // re-triggering this effect forever via the `deliveryRates` dependency.
+  // while it is open). The localStorage snapshot may be stale. Also fetch the
+  // flat delivery base once per session — guarded by a ref so a failed fetch
+  // can retry on the next cart open.
   useEffect(() => {
     if (!isOpen) return;
     void refreshAvailability();
-    if (deliveryRatesFetched.current === 'idle') {
-      deliveryRatesFetched.current = 'pending';
-      getDeliveryRates()
-        .then((rates) => {
-          deliveryRatesFetched.current = 'done';
-          setDeliveryRates(rates);
+    if (deliveryBaseFetched.current === 'idle') {
+      deliveryBaseFetched.current = 'pending';
+      getDeliveryBase()
+        .then((base) => {
+          deliveryBaseFetched.current = 'done';
+          setDeliveryBase(base);
         })
         .catch(() => {
-          deliveryRatesFetched.current = 'idle'; // allow retry on next cart open
+          deliveryBaseFetched.current = 'idle'; // allow retry on next cart open
         });
     }
   }, [isOpen, refreshAvailability]);
 
   const totalCount = items.reduce((n, i) => n + i.qty, 0);
   const totalPrice = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const shippingEstimate = computeShipping(items, deliveryRates);
+  const shippingEstimate = computeShipping(totalCount, deliveryBase);
 
   return (
     <CartContext.Provider

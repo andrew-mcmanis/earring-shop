@@ -1,27 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState, useTransition } from 'react';
-import type { Category } from '../../data/types';
-import { setDeliveryCharge, updatePickupDetails } from './actions';
-import type { PickupDetails } from './queries';
+import { setDeliveryBase, updatePickupDetails } from './actions';
+import type { DeliverySettings } from './queries';
 
 const inputClass =
   'font-body text-sm text-ink bg-white border border-kraft-light rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-kraft focus:border-kraft';
 const primaryBtn =
   'cursor-pointer bg-kraft text-cream font-body text-sm font-medium px-4 py-2 rounded hover:bg-kraft-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 disabled:opacity-60';
 
-function RateRow({ category }: { category: Category }) {
-  const [value, setValue] = useState(category.deliveryCharge.toFixed(2));
+function DeliveryBaseCard({ base, disabled }: { base: number; disabled: boolean }) {
+  const [value, setValue] = useState(base.toFixed(2));
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // useState only seeds once, so when a revalidation delivers a different
-  // saved rate (edited from another tab or device) the input must re-sync —
-  // otherwise a stale box could silently overwrite the newer value on Save.
-  // Skipped when the input already shows the server value (our own save
-  // landing), which keeps the "Saved" badge up.
-  const serverValue = category.deliveryCharge.toFixed(2);
+  // Re-sync when a revalidation delivers a newer saved price (edited from
+  // another tab/device), unless the admin has unsaved typing in the box —
+  // so a stale value can't silently overwrite a newer one on Save.
+  const serverValue = base.toFixed(2);
   const valueRef = useRef(value);
   valueRef.current = value;
   const prevServer = useRef(serverValue);
@@ -34,34 +31,45 @@ function RateRow({ category }: { category: Category }) {
     }
   }, [serverValue]);
 
+  if (disabled) {
+    return (
+      <p role="alert" className="font-body text-sm text-red-600">
+        Couldn&apos;t load your delivery price just now — refresh to try again. Saving is disabled
+        so nothing gets overwritten.
+      </p>
+    );
+  }
+
   function save() {
     setError(null);
     setSaved(false);
     const parsed = Number(value);
     if (value.trim() === '' || Number.isNaN(parsed)) {
-      setError('Enter a charge (0 or more).');
+      setError('Enter a price (0 or more).');
       return;
     }
     // EPSILON nudge so x.xx5 inputs round up (1.005 → 1.01, not 1.00).
     const rounded = Math.round((parsed + Number.EPSILON) * 100) / 100;
     const submitted = value;
     startTransition(async () => {
-      const res = await setDeliveryCharge(category.slug, rounded);
+      const res = await setDeliveryBase(rounded);
       if (res.error) {
         setError(res.error);
       } else {
         setSaved(true);
-        // Only snap the box to the canonical 2dp form if the admin hasn't
-        // typed something newer while the save was in flight.
         setValue((current) => (current === submitted ? rounded.toFixed(2) : current));
       }
     });
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 py-3 border-b border-cream-dark last:border-0">
-      <span className="font-body text-sm font-medium text-ink flex-1 min-w-[8rem]">{category.name}</span>
-      <div className="flex items-center gap-1.5">
+    <div className="flex flex-col gap-3">
+      <p className="font-body text-sm text-ink-light">
+        One delivery price for any order. The first item is charged the full price; every
+        additional item is charged half. So at £2.00: one item is £2.00, two items £3.00, three
+        items £4.00. Pickup is always free.
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
         <span className="font-body text-sm text-ink-light">£</span>
         <input
           type="number"
@@ -74,16 +82,16 @@ function RateRow({ category }: { category: Category }) {
             setSaved(false);
           }}
           disabled={isPending}
-          className={`${inputClass} w-24`}
-          aria-label={`Delivery charge for ${category.name}`}
+          className={`${inputClass} w-28`}
+          aria-label="Delivery price"
         />
+        <button type="button" onClick={save} disabled={isPending} className={primaryBtn}>
+          {isPending ? 'Saving…' : 'Save'}
+        </button>
+        {saved && <span className="font-body text-xs text-green-700">Saved</span>}
       </div>
-      <button type="button" onClick={save} disabled={isPending} className={primaryBtn}>
-        {isPending ? 'Saving…' : 'Save'}
-      </button>
-      {saved && <span className="font-body text-xs text-green-700">Saved</span>}
       {error && (
-        <span role="alert" className="font-body text-xs text-red-600 w-full">
+        <span role="alert" className="font-body text-xs text-red-600">
           {error}
         </span>
       )}
@@ -91,16 +99,22 @@ function RateRow({ category }: { category: Category }) {
   );
 }
 
-function PickupCard({ pickup }: { pickup: PickupDetails }) {
-  const [address, setAddress] = useState(pickup.address);
-  const [note, setNote] = useState(pickup.note);
+function PickupCard({
+  address: initialAddress,
+  note: initialNote,
+  disabled,
+}: {
+  address: string;
+  note: string;
+  disabled: boolean;
+}) {
+  const [address, setAddress] = useState(initialAddress);
+  const [note, setNote] = useState(initialNote);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // If the read failed, the fields would be blank — offering a save here could
-  // silently wipe the real stored address. Fail honestly instead.
-  if (pickup.error) {
+  if (disabled) {
     return (
       <p role="alert" className="font-body text-sm text-red-600">
         Couldn&apos;t load your collection details just now — refresh to try again. Saving is
@@ -168,39 +182,17 @@ function PickupCard({ pickup }: { pickup: PickupDetails }) {
   );
 }
 
-export function DeliveryManager({
-  categories,
-  categoriesError,
-  pickup,
-}: {
-  categories: Category[];
-  categoriesError: boolean;
-  pickup: PickupDetails;
-}) {
+export function DeliveryManager({ settings }: { settings: DeliverySettings }) {
   return (
     <div className="flex flex-col gap-6">
       <section className="bg-white border border-cream-dark rounded-lg p-5">
-        <h2 className="font-heading text-2xl font-bold text-ink mb-1">Delivery rates</h2>
-        <p className="font-body text-sm text-ink-light mb-4">
-          A charge per category. Each item in an order is charged its category&apos;s rate, and
-          they&apos;re added together. New categories you add appear here automatically.
-        </p>
-        {categoriesError ? (
-          <p role="alert" className="font-body text-sm text-red-600">
-            Couldn&apos;t load your categories just now — refresh to try again.
-          </p>
-        ) : categories.length === 0 ? (
-          <p className="font-body text-sm text-ink-light">
-            No categories yet — add some on the Labels page first.
-          </p>
-        ) : (
-          categories.map((c) => <RateRow key={c.slug} category={c} />)
-        )}
+        <h2 className="font-heading text-2xl font-bold text-ink mb-4">Delivery price</h2>
+        <DeliveryBaseCard base={settings.base} disabled={settings.error} />
       </section>
 
       <section className="bg-white border border-cream-dark rounded-lg p-5">
         <h2 className="font-heading text-2xl font-bold text-ink mb-4">Collection details</h2>
-        <PickupCard pickup={pickup} />
+        <PickupCard address={settings.address} note={settings.note} disabled={settings.error} />
       </section>
     </div>
   );

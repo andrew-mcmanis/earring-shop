@@ -55,7 +55,7 @@ function Field({
   );
 }
 
-export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, number> }) {
+export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
   const { items, totalPrice, totalCount, clear, unavailableIds, refreshAvailability } = useCart();
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(placeOrder, initialState);
@@ -88,7 +88,7 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
 
   const hasUnavailable = items.some((i) => unavailableIds.has(i.id));
 
-  const shipping = method === 'pickup' ? 0 : computeShipping(items, deliveryRates);
+  const shipping = method === 'pickup' ? 0 : computeShipping(totalCount, deliveryBase);
   const total = totalPrice + shipping;
 
   if (state.status === 'success') {

@@ -1,27 +1,25 @@
 'use server';
 
-import { isSupabaseConfigured, createReadClient } from './supabase';
-import { sampleCategories } from '../data/sample';
+import { isSupabaseConfigured, createServiceClient } from './supabase';
+import { sampleDeliveryBase } from '../data/sample';
 
 /**
- * Category slug → delivery charge (£). Used for the cart's estimate line; the
- * authoritative charge is always recomputed server-side in placeOrder.
+ * The single flat delivery base price (£) — the first item pays this, each
+ * additional item pays half (see computeShipping). Read via the service client
+ * because it lives in the private settings row, but ONLY the price is ever
+ * returned — never the collection address. Display-only for the cart/checkout;
+ * placeOrder reads it authoritatively and fails honestly on error.
  */
-export async function getDeliveryRates(): Promise<Record<string, number>> {
+export async function getDeliveryBase(): Promise<number> {
   if (isSupabaseConfigured()) {
-    const supabase = createReadClient();
-    const { data, error } = await supabase.from('categories').select('slug, delivery_charge');
-    if (!error && data) {
-      const rates: Record<string, number> = {};
-      for (const c of data) rates[c.slug] = Number(c.delivery_charge ?? 0);
-      return rates;
-    }
-    // Configured DB but the query failed (e.g. column missing pre-migration).
-    // Don't leak sample rates (sample slugs would mismatch real categories) —
-    // an empty map just yields the cart's generic estimate line.
-    return {};
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from('settings')
+      .select('delivery_base')
+      .eq('id', true)
+      .maybeSingle();
+    if (error || !data) return 0;
+    return Number(data.delivery_base ?? 0);
   }
-  const rates: Record<string, number> = {};
-  for (const c of sampleCategories) rates[c.slug] = c.deliveryCharge;
-  return rates;
+  return sampleDeliveryBase;
 }

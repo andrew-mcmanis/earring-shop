@@ -8,8 +8,7 @@
 create table if not exists categories (
   slug           text primary key,
   name           text not null,
-  sort_order     int  not null default 0,
-  delivery_charge numeric(10,2) not null default 0
+  sort_order     int  not null default 0
 );
 
 create table if not exists subcategories (
@@ -151,6 +150,7 @@ grant usage, select on all sequences in schema public to service_role;
 -- ============================================================
 create table if not exists settings (
   id             boolean primary key default true check (id),
+  delivery_base  numeric(10,2) not null default 0,  -- flat delivery: 1st item full, extras 50%
   pickup_address text,
   pickup_note    text,
   updated_at     timestamptz not null default now()

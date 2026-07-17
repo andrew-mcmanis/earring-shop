@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import type { Product } from '../data/types';
 import { getProducts, mapProduct, type ProductRow } from '../data/products';
-import { sampleCategories } from '../data/sample';
+import { sampleDeliveryBase } from '../data/sample';
 import { computeShipping } from './shipping';
 import { isSupabaseConfigured, createReadClient, createServiceClient } from './supabase';
 
@@ -23,7 +23,6 @@ interface OrderLine {
   name: string;
   unitPrice: number;
   quantity: number;
-  categorySlug: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,17 +64,11 @@ export async function placeOrder(
   // Read the catalogue with explicit error handling. getProducts() falls back
   // to the in-repo sample data on a query error — right for browsing, but here
   // it would make every real cart item miss and falsely report an empty cart.
-  // A checkout must fail honestly instead. The category delivery rates are
-  // embedded in the same query (via the category_slug FK), so the money
-  // numbers share that fail-honest guarantee instead of silently defaulting.
+  // A checkout must fail honestly instead.
   let catalogue: Product[];
-  const rates: Record<string, number> = {};
   if (isSupabaseConfigured()) {
     const supabase = createReadClient();
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, categories(delivery_charge)')
-      .eq('visible', true);
+    const { data, error } = await supabase.from('products').select('*').eq('visible', true);
     if (error || !data) {
       console.error('[order] catalogue read failed during checkout:', error?.message);
       return {
@@ -83,18 +76,10 @@ export async function placeOrder(
         message: 'Sorry, something went wrong on our side — please try again in a moment.',
       };
     }
-    const rows = data as (ProductRow & {
-      categories: { delivery_charge: number | string | null } | null;
-    })[];
-    catalogue = rows.map(mapProduct);
-    for (const row of rows) {
-      rates[row.category_slug] = Number(row.categories?.delivery_charge ?? 0);
-    }
+    catalogue = (data as ProductRow[]).map(mapProduct);
   } else {
-    // Demo mode (no database): the sample catalogue matches the sample cart
-    // ids, and the sample rates match what the cart/checkout displayed.
+    // Demo mode (no database): the sample catalogue matches the sample cart ids.
     catalogue = await getProducts();
-    for (const c of sampleCategories) rates[c.slug] = c.deliveryCharge;
   }
   const items: OrderLine[] = [];
   const soldOutNames: string[] = [];
@@ -111,7 +96,6 @@ export async function placeOrder(
       name: product.name,
       unitPrice: product.price,
       quantity,
-      categorySlug: product.categorySlug,
     });
   }
 
@@ -132,15 +116,32 @@ export async function placeOrder(
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
 
-  // Delivery = each item's category rate, summed (charged per item); pickup =
-  // £0. Rates came from the authoritative catalogue read above — never from
-  // the client.
-  const shipping = isPickup
-    ? 0
-    : computeShipping(
-        items.map((l) => ({ categorySlug: l.categorySlug, qty: l.quantity })),
-        rates,
-      );
+  // Delivery = the flat base for the first item + 50% of base per additional
+  // item; pickup = £0. The base is read here authoritatively from the private
+  // settings row — a read failure fails the checkout honestly rather than
+  // silently charging £0. Never trusted from the client.
+  let shipping = 0;
+  if (!isPickup) {
+    const count = items.reduce((n, l) => n + l.quantity, 0);
+    if (isSupabaseConfigured()) {
+      const svc = createServiceClient();
+      const { data: s, error: baseError } = await svc
+        .from('settings')
+        .select('delivery_base')
+        .eq('id', true)
+        .maybeSingle();
+      if (baseError) {
+        console.error('[order] delivery base read failed during checkout:', baseError.message);
+        return {
+          status: 'error',
+          message: 'Sorry, something went wrong on our side — please try again in a moment.',
+        };
+      }
+      shipping = computeShipping(count, Number(s?.delivery_base ?? 0));
+    } else {
+      shipping = computeShipping(count, sampleDeliveryBase);
+    }
+  }
 
   // If the database isn't configured, log the order so nothing is lost and the
   // customer still gets a confirmation.
