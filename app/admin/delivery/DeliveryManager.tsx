@@ -140,9 +140,11 @@ function PickupCard({ pickup }: { pickup: PickupDetails }) {
 
 export function DeliveryManager({
   categories,
+  categoriesError,
   pickup,
 }: {
   categories: Category[];
+  categoriesError: boolean;
   pickup: PickupDetails;
 }) {
   return (
@@ -153,9 +155,17 @@ export function DeliveryManager({
           A charge per category. A basket spanning categories pays the highest single rate (it
           posts as one parcel). New categories you add appear here automatically.
         </p>
-        {categories.map((c) => (
-          <RateRow key={c.slug} category={c} />
-        ))}
+        {categoriesError ? (
+          <p role="alert" className="font-body text-sm text-red-600">
+            Couldn&apos;t load your categories just now — refresh to try again.
+          </p>
+        ) : categories.length === 0 ? (
+          <p className="font-body text-sm text-ink-light">
+            No categories yet — add some on the Labels page first.
+          </p>
+        ) : (
+          categories.map((c) => <RateRow key={c.slug} category={c} />)
+        )}
       </section>
 
       <section className="bg-white border border-cream-dark rounded-lg p-5">

@@ -1,13 +1,15 @@
 import Link from 'next/link';
 import { AdminHeader } from '../AdminHeader';
-import { getCategories } from '../../data/products';
-import { getPickupDetails } from './queries';
+import { getDeliveryCategories, getPickupDetails } from './queries';
 import { DeliveryManager } from './DeliveryManager';
 
 export const metadata = { title: 'Delivery · Admin' };
 
 export default async function DeliveryPage() {
-  const [categories, pickup] = await Promise.all([getCategories(), getPickupDetails()]);
+  const [{ categories, error: categoriesError }, pickup] = await Promise.all([
+    getDeliveryCategories(),
+    getPickupDetails(),
+  ]);
 
   return (
     <div className="min-h-dvh bg-cream">
@@ -27,7 +29,7 @@ export default async function DeliveryPage() {
           Set a delivery charge for each category, and the collection details customers see once
           they order a pickup.
         </p>
-        <DeliveryManager categories={categories} pickup={pickup} />
+        <DeliveryManager categories={categories} categoriesError={categoriesError} pickup={pickup} />
       </main>
     </div>
   );
