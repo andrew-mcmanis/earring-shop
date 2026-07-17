@@ -68,7 +68,7 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
         'blg-last-order',
         JSON.stringify({
           reference: state.reference ?? null,
-          method,
+          method: state.fulfilmentMethod ?? method,
           collection: state.collection ?? null,
         }),
       );
@@ -163,6 +163,7 @@ export function CheckoutForm({ deliveryRates }: { deliveryRates: Record<string, 
                   value={m}
                   checked={method === m}
                   onChange={() => setMethod(m)}
+                  disabled={isPending}
                   className="h-4 w-4 accent-kraft cursor-pointer"
                 />
                 <span className="font-body text-sm">

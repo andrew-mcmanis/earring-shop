@@ -20,7 +20,12 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
     }
   }, []);
 
-  const reference = order?.reference ?? fallbackRef;
+  // Only trust the cached payload when it belongs to the order this page is for.
+  // Otherwise a stale payload (shared device / old bookmark / different ?ref=)
+  // could show a previous order's private collection address.
+  const matchedOrder =
+    order && fallbackRef && order.reference === fallbackRef ? order : null;
+  const reference = matchedOrder?.reference ?? fallbackRef;
 
   return (
     <>
@@ -31,16 +36,16 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
         </p>
       )}
 
-      {order?.method === 'pickup' && order.collection?.address ? (
+      {matchedOrder?.method === 'pickup' && matchedOrder.collection?.address ? (
         <div className="font-body text-base text-ink-light max-w-md leading-relaxed flex flex-col gap-2">
           <p>Your order is for collection. You can pick it up from:</p>
           <p className="whitespace-pre-line font-medium text-ink bg-cream-dark rounded-lg px-4 py-3">
-            {order.collection.address}
+            {matchedOrder.collection.address}
           </p>
-          {order.collection.note && <p>{order.collection.note}</p>}
+          {matchedOrder.collection.note && <p>{matchedOrder.collection.note}</p>}
           <p>We&apos;ll be in touch to arrange a time.</p>
         </div>
-      ) : order?.method === 'pickup' ? (
+      ) : matchedOrder?.method === 'pickup' ? (
         <p className="font-body text-base text-ink-light max-w-md leading-relaxed">
           Your order is for collection — we&apos;ll be in touch with the details shortly.
         </p>

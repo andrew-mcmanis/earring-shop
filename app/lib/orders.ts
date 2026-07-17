@@ -12,6 +12,8 @@ export interface PlaceOrderState {
   fieldErrors?: Record<string, string>;
   /** Set only for a successful pickup order — the private collection details. */
   collection?: { address: string | null; note: string | null };
+  /** The method the server actually processed — authoritative for the confirmation. */
+  fulfilmentMethod?: 'delivery' | 'pickup';
 }
 
 interface OrderLine {
@@ -213,7 +215,12 @@ export async function placeOrder(
       }
       collection = { address: settings?.pickup_address ?? null, note: settings?.pickup_note ?? null };
     }
-    return { status: 'success', reference: `BLG-${order.order_number}`, collection };
+    return {
+      status: 'success',
+      reference: `BLG-${order.order_number}`,
+      collection,
+      fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
+    };
   } catch (err) {
     // Don't break checkout on a transient/setup failure — log the full order
     // (recoverable) and still confirm to the customer.
