@@ -199,7 +199,7 @@ export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
               id="notes"
               name="notes"
               rows={3}
-              placeholder="Anything we should know — a gift message, delivery note, etc."
+              placeholder="Anything we should know — a delivery note or special request."
               className="font-body text-sm text-ink bg-white border border-kraft-light rounded px-3 py-2.5 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft focus:border-kraft resize-y"
             />
           </div>
