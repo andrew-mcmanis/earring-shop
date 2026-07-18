@@ -1,12 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import { Amatic_SC, Cabin } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { CartProvider } from './components/CartProvider';
 import { CartDrawer } from './components/CartDrawer';
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+import { SITE_URL } from './lib/site';
 
 const amaticSC = Amatic_SC({
   weight: ['400', '700'],
@@ -38,6 +37,11 @@ export const metadata: Metadata = {
       'Earrings, bookmarks and gifts — every piece made by hand.',
     locale: 'en_GB',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BLG Creations — Handmade Jewellery & Gifts',
+    description: 'Earrings, bookmarks and gifts — every piece made by hand.',
+  },
 };
 
 export const viewport: Viewport = {
@@ -59,6 +63,8 @@ export default function RootLayout({
           {children}
           <CartDrawer />
         </CartProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

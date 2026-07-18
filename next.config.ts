@@ -6,6 +6,11 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  // Ensure the OG-card font files are bundled into the image routes on Vercel.
+  outputFileTracingIncludes: {
+    '/opengraph-image': ['./assets/**'],
+    '/product/[id]/opengraph-image': ['./assets/**'],
+  },
   images: {
     remotePatterns: supabaseHost
       ? [

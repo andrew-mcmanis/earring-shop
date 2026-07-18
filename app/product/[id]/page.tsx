@@ -13,6 +13,7 @@ import {
   getSubcategories,
   getColours,
 } from '../../data/products';
+import { SITE_URL } from '../../lib/site';
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
@@ -34,6 +35,12 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   return {
     title: product.name,
     description: product.description,
+    alternates: { canonical: `/product/${product.id}` },
+    openGraph: {
+      type: 'website',
+      title: product.name,
+      description: product.description,
+    },
   };
 }
 
@@ -69,6 +76,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            description: product.description,
+            ...(product.image ? { image: [product.image] } : {}),
+            ...(categoryName ? { category: categoryName } : {}),
+            offers: {
+              '@type': 'Offer',
+              price: product.price.toFixed(2),
+              priceCurrency: 'GBP',
+              availability: product.soldOut
+                ? 'https://schema.org/SoldOut'
+                : 'https://schema.org/InStock',
+              url: `${SITE_URL}/product/${product.id}`,
+            },
+          }),
+        }}
+      />
+
       <Header />
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
