@@ -16,7 +16,7 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
-import { MAX_PRODUCT_PHOTOS, MAX_PHOTO_BYTES } from '../../data/types';
+import { MAX_PRODUCT_PHOTOS, MAX_PHOTO_BYTES, MIN_PHOTO_DIMENSION } from '../../data/types';
 import { SortablePhoto, type PhotoItem } from './SortablePhoto';
 
 interface ProductPhotosProps {
@@ -32,6 +32,7 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
     initialUrls.map((url) => ({ id: url, kind: 'existing' as const, url })),
   );
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -73,6 +74,7 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
   function addFiles(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return;
     setError(null);
+    setWarning(null);
     const room = MAX_PRODUCT_PHOTOS - items.length;
     if (room <= 0) {
       setError(`You can add up to ${MAX_PRODUCT_PHOTOS} photos.`);
@@ -82,6 +84,7 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
     const rejected: string[] = [];
     const tooBig: string[] = [];
     const next: PhotoItem[] = [];
+    const accepted: { name: string; url: string }[] = [];
     for (const file of chosen) {
       if (!file.type.startsWith('image/')) {
         rejected.push(file.name);
@@ -91,7 +94,9 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
         tooBig.push(file.name);
         continue;
       }
-      next.push({ id: `new-${newCounter++}`, kind: 'new', url: URL.createObjectURL(file), file });
+      const url = URL.createObjectURL(file);
+      next.push({ id: `new-${newCounter++}`, kind: 'new', url, file });
+      accepted.push({ name: file.name, url });
     }
     if (fileList.length > room) {
       setError(`Only ${MAX_PRODUCT_PHOTOS} photos allowed — extra files were skipped.`);
@@ -101,6 +106,31 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
       setError(`Skipped non-image file(s): ${rejected.join(', ')}.`);
     }
     if (next.length) setItems((prev) => [...prev, ...next]);
+
+    // Advisory (non-blocking): warn if any accepted photo is low-resolution, so
+    // a blurry image is caught before it's saved to the shop. Measured from the
+    // object URLs already created above (kept valid until the item is removed).
+    if (accepted.length) {
+      Promise.all(
+        accepted.map(
+          (a) =>
+            new Promise<{ name: string; small: boolean }>((resolve) => {
+              const img = new window.Image();
+              img.onload = () =>
+                resolve({ name: a.name, small: Math.min(img.naturalWidth, img.naturalHeight) < MIN_PHOTO_DIMENSION });
+              img.onerror = () => resolve({ name: a.name, small: false });
+              img.src = a.url;
+            }),
+        ),
+      ).then((results) => {
+        const small = results.filter((r) => r.small).map((r) => r.name);
+        if (small.length) {
+          setWarning(
+            `These look low-resolution and may appear blurry in the shop — for the crispest result use photos at least ${MIN_PHOTO_DIMENSION}px on the shortest side: ${small.join(', ')}.`,
+          );
+        }
+      });
+    }
   }
 
   function removeItem(id: string) {
@@ -110,6 +140,7 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
       return prev.filter((i) => i.id !== id);
     });
     setError(null);
+    setWarning(null);
   }
 
   return (
@@ -150,6 +181,11 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
       {error && (
         <p className="font-body text-xs text-red-600" role="alert">
           {error}
+        </p>
+      )}
+      {warning && (
+        <p className="font-body text-xs text-amber-700" role="status">
+          {warning}
         </p>
       )}
     </div>

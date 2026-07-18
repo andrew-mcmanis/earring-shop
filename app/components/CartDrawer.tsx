@@ -200,7 +200,7 @@ export function CartDrawer() {
             )}
             <button
               onClick={clear}
-              className="cursor-pointer font-body text-xs text-ink-light hover:text-kraft underline underline-offset-2 transition-colors duration-150 self-center"
+              className="cursor-pointer font-body text-xs text-ink-light hover:text-kraft underline underline-offset-2 transition-colors duration-150 self-center py-1.5"
             >
               Clear cart
             </button>

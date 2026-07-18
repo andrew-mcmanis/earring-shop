@@ -79,3 +79,8 @@ export const MAX_PRODUCT_PHOTOS = 6;
 
 /** Maximum size per uploaded photo, in bytes (8 MB). Enforced client + server. */
 export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+
+/** Advisory minimum photo dimension (shortest side, px). Below this the admin
+ *  gets a non-blocking "may look blurry" warning — the product detail view
+ *  renders photos up to ~700px, so smaller sources get upscaled. */
+export const MIN_PHOTO_DIMENSION = 1000;

@@ -33,7 +33,7 @@ export function Header() {
                 priority
                 className="h-14 sm:h-20 w-auto object-contain"
               />
-              <span className="font-body text-[10px] sm:text-xs font-medium tracking-[0.2em] text-ink-light uppercase">
+              <span className="font-body text-[11px] sm:text-xs font-medium tracking-[0.2em] text-ink-light uppercase">
                 Handmade Jewellery &amp; Gifts
               </span>
             </Link>
