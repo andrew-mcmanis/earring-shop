@@ -5,27 +5,32 @@ import { redirect } from 'next/navigation';
 import { requireUser as requireUserOrThrow } from '../../lib/admin-auth';
 import { createServerSupabase } from '../../lib/supabase-server';
 import { createServiceClient } from '../../lib/supabase';
-import { MAX_PRODUCT_PHOTOS, MAX_PHOTO_BYTES } from '../../data/types';
+import { MAX_PRODUCT_PHOTOS, PRODUCT_IMAGE_BUCKET } from '../../data/types';
 
-const BUCKET = 'product-images';
+const BUCKET = PRODUCT_IMAGE_BUCKET;
+const STORAGE_PUBLIC_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
 
-async function uploadImage(file: File): Promise<{ url: string } | { error: string }> {
-  if (!file.type.startsWith('image/')) return { error: 'Please choose an image file (JPG, PNG, etc.).' };
-  if (file.size > MAX_PHOTO_BYTES) return { error: 'Image must be under 8MB.' };
-
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
-  const path = `products/${crypto.randomUUID()}.${ext}`;
-  const bytes = new Uint8Array(await file.arrayBuffer());
-
-  const supabase = createServiceClient();
-  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
-    contentType: file.type,
-    upsert: false,
-  });
-  if (error) return { error: `Image upload failed: ${error.message}` };
-
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl };
+/**
+ * Mint a one-time signed upload URL so the browser can upload a product photo
+ * directly to Storage. Photos used to be POSTed through the create/edit Server
+ * Action, but Vercel Functions cap the request body at ~4.5 MB, so adding more
+ * than one photo silently failed to save. Now the bytes go straight from the
+ * browser to Supabase and only the resulting URLs pass through the action.
+ * Owner-gated; the token authorises exactly one upload to a random path.
+ */
+export async function createProductImageUploadUrl(
+  ext: string,
+): Promise<{ path: string; token: string } | { error: string }> {
+  await requireUserOrThrow();
+  const clean = (ext || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'jpg';
+  const path = `products/${crypto.randomUUID()}.${clean}`;
+  const { data, error } = await createServiceClient()
+    .storage.from(BUCKET)
+    .createSignedUploadUrl(path);
+  if (error || !data) {
+    return { error: `Could not start the photo upload: ${error?.message ?? 'unknown error'}` };
+  }
+  return { path: data.path, token: data.token };
 }
 
 export interface ProductFormState {
@@ -83,8 +88,8 @@ async function parseProduct(formData: FormData): Promise<
     if (colour?.hex) accentColor = colour.hex;
   }
 
-  // Photos: an ordered token list ('image_order') plus the new files ('new_image').
-  // Each token is either an existing public URL (kept) or 'new:i' (upload newFiles[i]).
+  // Photos: an ordered list of Storage URLs. New photos are uploaded straight
+  // from the browser (see createProductImageUploadUrl), so only URLs arrive here.
   const orderRaw = str(formData, 'image_order');
   let order: string[] = [];
   if (orderRaw) {
@@ -95,9 +100,6 @@ async function parseProduct(formData: FormData): Promise<
       order = [];
     }
   }
-  // Keep every appended File (no size pre-filter) so newFiles stays positionally
-  // aligned with the client's `new:i` tokens; uploadImage validates each one.
-  const newFiles = formData.getAll('new_image').filter((f): f is File => f instanceof File);
 
   if (order.length > MAX_PRODUCT_PHOTOS) {
     return {
@@ -106,25 +108,9 @@ async function parseProduct(formData: FormData): Promise<
     };
   }
 
-  // Upload all new files concurrently — they map positionally to the client's
-  // `new:i` tokens. Bail on the first failure.
-  const uploads = await Promise.all(newFiles.map((f) => uploadImage(f)));
-  const failed = uploads.find((r) => 'error' in r);
-  if (failed && 'error' in failed) {
-    return { ok: false, state: { status: 'error', message: failed.error } };
-  }
-
-  // Assemble the ordered gallery: existing URLs kept as-is, new files resolved to
-  // their uploaded URL by index. (Owner-only action, so existing tokens are trusted.)
-  const imageUrls: string[] = [];
-  for (const token of order) {
-    if (token.startsWith('new:')) {
-      const uploaded = uploads[Number(token.slice(4))];
-      if (uploaded && 'url' in uploaded) imageUrls.push(uploaded.url);
-    } else {
-      imageUrls.push(token);
-    }
-  }
+  // Only keep URLs that point at our own product-images bucket, so a stray value
+  // can't be stored as a photo. (Owner-only action, so this is belt-and-braces.)
+  const imageUrls = order.filter((u) => u.includes(STORAGE_PUBLIC_PREFIX));
   const imageUrl = imageUrls[0] ?? null;
 
   return {

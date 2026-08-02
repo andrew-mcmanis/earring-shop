@@ -3,7 +3,9 @@
 import { useActionState, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Category, Subcategory, Colour, Product } from '../../data/types';
-import type { ProductFormState } from './actions';
+import { PRODUCT_IMAGE_BUCKET } from '../../data/types';
+import { createProductImageUploadUrl, type ProductFormState } from './actions';
+import { createBrowserSupabase } from '../../lib/supabase-browser';
 import { ProductPhotos } from './ProductPhotos';
 import type { PhotoItem } from './SortablePhoto';
 
@@ -40,6 +42,8 @@ export function ProductForm({
 }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [category, setCategory] = useState(product?.categorySlug ?? '');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const errs = state.fieldErrors ?? {};
 
   const photosRef = useRef<PhotoItem[]>([]);
@@ -47,20 +51,56 @@ export function ProductForm({
     photosRef.current = items;
   }, []);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setUploadError(null);
     const fd = new FormData(e.currentTarget);
+    const items = photosRef.current;
     const order: string[] = [];
-    let n = 0;
-    for (const item of photosRef.current) {
-      if (item.kind === 'existing') {
-        order.push(item.url);
-      } else if (item.file) {
-        fd.append('new_image', item.file);
-        order.push(`new:${n}`);
-        n += 1;
+
+    // New photos upload straight from the browser to Storage (via a signed URL),
+    // so only the resulting URLs go through the Server Action. Photos POSTed
+    // through the action used to fail once they exceeded Vercel's ~4.5 MB body
+    // limit — which is why adding more than one didn't save.
+    if (items.some((it) => it.kind === 'new' && it.file)) {
+      setUploading(true);
+      try {
+        const supabase = createBrowserSupabase();
+        for (const item of items) {
+          if (item.kind === 'existing') {
+            order.push(item.url);
+            continue;
+          }
+          if (!item.file) continue;
+          const ext = item.file.name.split('.').pop() ?? 'jpg';
+          const signed = await createProductImageUploadUrl(ext);
+          if ('error' in signed) {
+            setUploadError(signed.error);
+            setUploading(false);
+            return;
+          }
+          const { error: upErr } = await supabase.storage
+            .from(PRODUCT_IMAGE_BUCKET)
+            .uploadToSignedUrl(signed.path, signed.token, item.file, {
+              contentType: item.file.type,
+            });
+          if (upErr) {
+            setUploadError(`A photo failed to upload — please try again. (${upErr.message})`);
+            setUploading(false);
+            return;
+          }
+          order.push(supabase.storage.from(PRODUCT_IMAGE_BUCKET).getPublicUrl(signed.path).data.publicUrl);
+        }
+      } catch {
+        setUploadError('Something went wrong uploading your photos — please try again.');
+        setUploading(false);
+        return;
       }
+      setUploading(false);
+    } else {
+      for (const item of items) if (item.kind === 'existing') order.push(item.url);
     }
+
     fd.set('image_order', JSON.stringify(order));
     formAction(fd);
   }
@@ -222,13 +262,22 @@ export function ProductForm({
         </span>
       </label>
 
+      {uploadError && (
+        <p
+          role="alert"
+          className="font-body text-sm text-red-700 bg-red-50 border border-red-200 rounded px-4 py-3"
+        >
+          {uploadError}
+        </p>
+      )}
+
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || uploading}
           className="cursor-pointer bg-kraft text-cream font-body text-sm font-semibold px-6 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isPending ? 'Saving…' : submitLabel}
+          {uploading ? 'Uploading photos…' : isPending ? 'Saving…' : submitLabel}
         </button>
         <Link
           href="/admin/products"

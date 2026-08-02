@@ -22,14 +22,9 @@ const nextConfig: NextConfig = {
         ]
       : [],
   },
-  experimental: {
-    // Product photos are posted together through the create/edit Server Action,
-    // so this whole-request limit must cover the worst case of MAX_PRODUCT_PHOTOS
-    // (6) × MAX_PHOTO_BYTES (8 MB) ≈ 48 MB, plus form-field overhead.
-    serverActions: {
-      bodySizeLimit: '52mb',
-    },
-  },
+  // Product photos now upload straight from the browser to Storage via a signed
+  // URL, so no large payloads pass through Server Actions — the default request
+  // body limit is fine (and avoids masking Vercel's ~4.5 MB function cap).
 };
 
 export default nextConfig;
