@@ -1,10 +1,11 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import type { Product } from '../data/types';
 import { getProducts, mapProduct, type ProductRow } from '../data/products';
 import { sampleDeliveryBase } from '../data/sample';
 import { computeShipping } from './shipping';
+import { flipProductsSoldOut } from './fulfilment';
+import { isStripeConfigured, getStripe } from './stripe';
 import { isSupabaseConfigured, createReadClient, createServiceClient } from './supabase';
 
 export interface PlaceOrderState {
@@ -16,6 +17,8 @@ export interface PlaceOrderState {
   collection?: { address: string | null; note: string | null };
   /** The method the server actually processed — authoritative for the confirmation. */
   fulfilmentMethod?: 'delivery' | 'pickup';
+  /** Present when payment is required (Stripe configured): the Payment Element secret. */
+  clientSecret?: string;
 }
 
 interface OrderLine {
@@ -32,7 +35,7 @@ function str(formData: FormData, key: string): string {
   return typeof v === 'string' ? v.trim() : '';
 }
 
-export async function placeOrder(
+export async function createOrderAndIntent(
   _prev: PlaceOrderState,
   formData: FormData,
 ): Promise<PlaceOrderState> {
@@ -61,10 +64,6 @@ export async function placeOrder(
     // ignore malformed payload — handled by the empty check below
   }
 
-  // Read the catalogue with explicit error handling. getProducts() falls back
-  // to the in-repo sample data on a query error — right for browsing, but here
-  // it would make every real cart item miss and falsely report an empty cart.
-  // A checkout must fail honestly instead.
   let catalogue: Product[];
   if (isSupabaseConfigured()) {
     const supabase = createReadClient();
@@ -78,9 +77,9 @@ export async function placeOrder(
     }
     catalogue = (data as ProductRow[]).map(mapProduct);
   } else {
-    // Demo mode (no database): the sample catalogue matches the sample cart ids.
     catalogue = await getProducts();
   }
+
   const items: OrderLine[] = [];
   const soldOutNames: string[] = [];
   for (const entry of cart) {
@@ -91,12 +90,7 @@ export async function placeOrder(
       soldOutNames.push(product.name);
       continue;
     }
-    items.push({
-      productId: product.id,
-      name: product.name,
-      unitPrice: product.price,
-      quantity,
-    });
+    items.push({ productId: product.id, name: product.name, unitPrice: product.price, quantity });
   }
 
   if (Object.keys(fieldErrors).length > 0) {
@@ -116,10 +110,7 @@ export async function placeOrder(
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
 
-  // Delivery = the flat base for the first item + 50% of base per additional
-  // item; pickup = £0. The base is read here authoritatively from the private
-  // settings row — a read failure fails the checkout honestly rather than
-  // silently charging £0. Never trusted from the client.
+  // Delivery recomputed server-side from the private settings row.
   let shipping = 0;
   if (!isPickup) {
     const count = items.reduce((n, l) => n + l.quantity, 0);
@@ -143,18 +134,15 @@ export async function placeOrder(
     }
   }
 
-  // If the database isn't configured, log the order so nothing is lost and the
-  // customer still gets a confirmation.
+  const total = subtotal + shipping;
+
+  // Demo mode (no DB): log the order so nothing is lost; confirm to the customer.
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.info('[order] DB not configured — order received but not saved:\n', {
-      name,
-      email,
-      items,
-      subtotal,
-      shipping,
+      name, email, items, subtotal, shipping,
       fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     });
-    return { status: 'success' };
+    return { status: 'success', fulfilmentMethod: isPickup ? 'pickup' : 'delivery' };
   }
 
   try {
@@ -174,6 +162,7 @@ export async function placeOrder(
         shipping,
         fulfilment_method: isPickup ? 'pickup' : 'delivery',
         status: 'new',
+        payment_status: 'unpaid',
       })
       .select('id, order_number')
       .single();
@@ -191,28 +180,9 @@ export async function placeOrder(
     );
     if (itemsError) throw itemsError;
 
-    // Each piece is one-of-a-kind: once it sells, flip it to sold out so no one
-    // else can order it. The owner toggles it back in stock when she makes a new
-    // one. Best-effort — the order is already saved, so a failure here must NOT
-    // break the customer's checkout (she can flip it manually from the admin).
-    // NOTE: when Stripe lands, move this to the payment_intent.succeeded webhook
-    // (alongside the confirmation email) so unpaid/abandoned orders never flip.
-    try {
-      const soldIds = [...new Set(items.map((l) => l.productId))];
-      const { error: soldOutError } = await supabase
-        .from('products')
-        .update({ sold_out: true })
-        .in('id', soldIds);
-      if (soldOutError) throw soldOutError;
-      revalidatePath('/');
-      revalidatePath('/admin/products');
-      for (const id of soldIds) revalidatePath(`/product/${id}`);
-    } catch (flipErr) {
-      console.error('[order] saved OK but failed to auto-flip sold-out:', flipErr, {
-        reference: `BLG-${order.order_number}`,
-      });
-    }
+    const reference = `BLG-${order.order_number}`;
 
+    // Read pickup collection details for the confirmation screen (never client-trusted).
     let collection: { address: string | null; note: string | null } | undefined;
     if (isPickup) {
       const { data: settings, error: settingsError } = await supabase
@@ -221,32 +191,64 @@ export async function placeOrder(
         .eq('id', true)
         .maybeSingle();
       if (settingsError) {
-        console.error('[order] pickup settings read failed — collection details unavailable:', settingsError.message);
+        console.error('[order] pickup settings read failed:', settingsError.message);
       }
       collection = { address: settings?.pickup_address ?? null, note: settings?.pickup_note ?? null };
     }
+
+    // ── Payment path ──────────────────────────────────────────────────
+    // With Stripe configured, create a PaymentIntent and hand the client its
+    // secret. The order stays 'unpaid'; the webhook flips sold-out + emails on
+    // success. Do NOT flip here.
+    if (isStripeConfigured()) {
+      try {
+        const intent = await getStripe().paymentIntents.create({
+          amount: Math.round(total * 100), // GBP pence
+          currency: 'gbp',
+          automatic_payment_methods: { enabled: true },
+          metadata: { order_id: order.id, reference },
+        });
+        await supabase
+          .from('orders')
+          .update({ stripe_payment_intent: intent.id })
+          .eq('id', order.id);
+        return {
+          status: 'success',
+          reference,
+          collection,
+          fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
+          clientSecret: intent.client_secret ?? undefined,
+        };
+      } catch (payErr) {
+        console.error('[order] saved OK but PaymentIntent creation failed:', payErr, { reference });
+        return {
+          status: 'error',
+          message: 'Sorry, we could not start the payment — please try again in a moment.',
+        };
+      }
+    }
+
+    // ── Fallback path (no Stripe keys yet) ────────────────────────────
+    // Behaves like today: treat as placed, flip sold-out inline, confirm.
+    try {
+      await flipProductsSoldOut(items.map((l) => l.productId));
+    } catch (flipErr) {
+      console.error('[order] saved OK but failed to auto-flip sold-out:', flipErr, { reference });
+    }
     return {
       status: 'success',
-      reference: `BLG-${order.order_number}`,
+      reference,
       collection,
       fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     };
   } catch (err) {
-    // Don't break checkout on a transient/setup failure — log the full order
-    // (recoverable) and still confirm to the customer.
     console.error('[order] FAILED to save — order logged for manual entry:', err, {
-      name,
-      email,
-      phone,
-      address,
-      city,
-      postcode,
-      notes,
-      items,
-      subtotal,
-      shipping,
+      name, email, phone, address, city, postcode, notes, items, subtotal, shipping,
       fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     });
-    return { status: 'success' };
+    return { status: 'success', fulfilmentMethod: isPickup ? 'pickup' : 'delivery' };
   }
 }
+
+/** @deprecated transitional alias — removed in the checkout rewrite (Task 6). */
+export const placeOrder = createOrderAndIntent;
