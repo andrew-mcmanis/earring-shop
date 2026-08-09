@@ -108,6 +108,10 @@ create table if not exists orders (
   fulfilment_method text not null default 'delivery'
                  check (fulfilment_method in ('delivery', 'pickup')),
   status         text not null default 'new',  -- new | made | posted | cancelled
+  payment_status text not null default 'unpaid'
+                 check (payment_status in ('unpaid', 'paid', 'refunded')),
+  stripe_payment_intent text,
+  paid_at        timestamptz,
   created_at     timestamptz not null default now(),
   -- A delivery order must carry an address (pickup orders store null).
   check (fulfilment_method = 'pickup' or address is not null)
@@ -124,6 +128,7 @@ create table if not exists order_items (
 
 create index if not exists order_items_order_idx on order_items(order_id);
 create index if not exists orders_created_idx on orders(created_at desc);
+create index if not exists orders_payment_intent_idx on orders (stripe_payment_intent);
 
 -- ============================================================
 -- Row Level Security

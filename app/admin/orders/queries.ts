@@ -1,5 +1,5 @@
 import { createServerSupabase } from '../../lib/supabase-server';
-import type { Order, OrderStatus } from '../../data/types';
+import type { Order, OrderStatus, PaymentStatus } from '../../data/types';
 
 interface OrderItemRow {
   id: string;
@@ -24,6 +24,9 @@ interface OrderRow {
   shipping: number | string;
   fulfilment_method: string;
   status: string;
+  payment_status?: string | null;
+  stripe_payment_intent?: string | null;
+  paid_at?: string | null;
   created_at: string;
   order_items: OrderItemRow[];
 }
@@ -44,6 +47,9 @@ function mapOrder(r: OrderRow): Order {
     shipping: Number(r.shipping ?? 0),
     fulfilmentMethod: r.fulfilment_method === 'pickup' ? 'pickup' : 'delivery',
     status: r.status as OrderStatus,
+    paymentStatus: (r.payment_status as PaymentStatus | null) ?? 'unpaid',
+    stripePaymentIntent: r.stripe_payment_intent ?? null,
+    paidAt: r.paid_at ?? null,
     createdAt: r.created_at,
     items: (r.order_items ?? []).map((i) => ({
       id: i.id,

@@ -24,6 +24,8 @@ export interface Colour {
 
 export type OrderStatus = 'new' | 'made' | 'posted' | 'cancelled';
 
+export type PaymentStatus = 'unpaid' | 'paid' | 'refunded';
+
 export interface OrderItem {
   id: string;
   productId: string | null;
@@ -48,6 +50,10 @@ export interface Order {
   shipping: number;
   fulfilmentMethod: 'delivery' | 'pickup';
   status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  stripePaymentIntent: string | null;
+  /** ISO timestamp set when the payment webhook marked the order paid. */
+  paidAt: string | null;
   createdAt: string;
   items: OrderItem[];
 }
