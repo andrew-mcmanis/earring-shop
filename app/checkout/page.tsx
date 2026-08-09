@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { CheckoutForm } from '../components/CheckoutForm';
 import { getDeliveryBase } from '../lib/delivery';
+import { isStripeConfigured } from '../lib/stripe';
 
 export const metadata: Metadata = {
   title: 'Checkout',
@@ -17,6 +18,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function CheckoutPage() {
   const deliveryBase = await getDeliveryBase();
+  const paymentEnabled = isStripeConfigured();
 
   return (
     <>
@@ -37,7 +39,7 @@ export default async function CheckoutPage() {
 
         <h1 className="font-heading text-4xl sm:text-5xl font-bold text-ink mb-8">Checkout</h1>
 
-        <CheckoutForm deliveryBase={deliveryBase} />
+        <CheckoutForm deliveryBase={deliveryBase} paymentEnabled={paymentEnabled} />
       </div>
 
       <Footer />

@@ -249,6 +249,3 @@ export async function createOrderAndIntent(
     return { status: 'success', fulfilmentMethod: isPickup ? 'pickup' : 'delivery' };
   }
 }
-
-/** @deprecated transitional alias — removed in the checkout rewrite (Task 6). */
-export const placeOrder = createOrderAndIntent;

@@ -6,7 +6,8 @@ import { useActionState, useEffect, useState } from 'react';
 import { useCart } from './CartProvider';
 import { ProductIcon } from './ProductIcon';
 import { ProductImage } from './ProductImage';
-import { placeOrder, type PlaceOrderState } from '../lib/orders';
+import { createOrderAndIntent, type PlaceOrderState } from '../lib/orders';
+import { StripePaymentStep } from './StripePaymentStep';
 import { computeShipping } from '../lib/shipping';
 
 const initialState: PlaceOrderState = { status: 'idle' };
@@ -55,15 +56,17 @@ function Field({
   );
 }
 
-export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
+export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: number; paymentEnabled: boolean }) {
   const { items, totalPrice, totalCount, clear, unavailableIds, refreshAvailability } = useCart();
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(placeOrder, initialState);
+  const [state, formAction, isPending] = useActionState(createOrderAndIntent, initialState);
+  const [editing, setEditing] = useState(false);
+  const inPayment = Boolean(state.clientSecret) && !editing;
   const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
 
-  // On success, clear the cart and move to the confirmation page.
+  // Fallback success (no Stripe): behave like before — store + redirect.
   useEffect(() => {
-    if (state.status !== 'success') return;
+    if (state.status !== 'success' || state.clientSecret) return;
     try {
       sessionStorage.setItem(
         'blg-last-order',
@@ -71,15 +74,21 @@ export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
           reference: state.reference ?? null,
           method: state.fulfilmentMethod ?? method,
           collection: state.collection ?? null,
+          paid: false,
         }),
       );
     } catch {
-      // sessionStorage unavailable — the success page falls back to the ref + generic copy.
+      // sessionStorage unavailable — success page falls back to ref + generic copy.
     }
     clear();
     const q = state.reference ? `?ref=${encodeURIComponent(state.reference)}` : '';
     router.push(`/checkout/success${q}`);
   }, [state, method, clear, router]);
+
+  // When a fresh client secret arrives after an edit+resubmit, leave edit mode.
+  useEffect(() => {
+    if (state.clientSecret) setEditing(false);
+  }, [state.clientSecret]);
 
   // Re-check availability when the checkout loads and whenever the cart changes.
   useEffect(() => {
@@ -91,7 +100,7 @@ export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
   const shipping = method === 'pickup' ? 0 : computeShipping(totalCount, deliveryBase);
   const total = totalPrice + shipping;
 
-  if (state.status === 'success') {
+  if (state.status === 'success' && !state.clientSecret) {
     return (
       <p className="font-body text-sm text-ink-light py-20 text-center">Placing your order…</p>
     );
@@ -118,7 +127,7 @@ export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
   return (
     <div className="flex flex-col lg:flex-row gap-10">
       {/* Details form */}
-      <form action={formAction} className="flex-1 flex flex-col gap-5" noValidate>
+      <form action={formAction} className={`flex-1 flex flex-col gap-5 ${inPayment ? 'hidden' : ''}`} noValidate>
         <input
           type="hidden"
           name="items"
@@ -210,13 +219,33 @@ export function CheckoutForm({ deliveryBase }: { deliveryBase: number }) {
           disabled={isPending || hasUnavailable}
           className="bg-kraft text-cream font-body text-sm font-semibold px-6 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed self-start"
         >
-          {isPending ? 'Placing order…' : hasUnavailable ? 'Remove sold-out items to continue' : 'Place order'}
+          {isPending
+            ? 'Placing order…'
+            : hasUnavailable
+              ? 'Remove sold-out items to continue'
+              : paymentEnabled
+                ? 'Continue to payment'
+                : 'Place order'}
         </button>
         <p className="font-body text-xs text-ink-light">
-          We&apos;ll email you to confirm payment and delivery — no
-          payment is taken on this page.
+          {paymentEnabled
+            ? "You'll pay securely by card on the next step."
+            : "We'll email you to confirm payment and delivery."}
         </p>
       </form>
+
+        {inPayment && state.clientSecret && (
+          <div className="flex-1">
+            <StripePaymentStep
+              key={state.clientSecret}
+              clientSecret={state.clientSecret}
+              reference={state.reference}
+              method={state.fulfilmentMethod ?? method}
+              collection={state.collection}
+              onEdit={() => setEditing(true)}
+            />
+          </div>
+        )}
 
       {/* Order summary */}
       <aside className="lg:w-80 flex-shrink-0" aria-label="Order summary">
