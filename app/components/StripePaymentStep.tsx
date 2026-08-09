@@ -6,10 +6,13 @@ import { loadStripe, type Appearance } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useCart } from './CartProvider';
 
-// loadStripe once at module scope (idempotent). Empty string if unset — we only
-// ever render this component when the server returned a client secret, which
-// implies the publishable key is present too.
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '');
+// loadStripe once at module scope (idempotent). Gated on the key: calling
+// loadStripe('') throws an uncaught IntegrationError, and this module is
+// statically imported by CheckoutForm even in the no-keys fallback window. We
+// only ever RENDER this component when the server returned a client secret
+// (which implies the key is set), so a null promise here is never consumed.
+const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 const appearance: Appearance = {
   theme: 'stripe',
