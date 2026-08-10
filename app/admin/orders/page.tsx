@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { AdminHeader } from '../AdminHeader';
 import { adminGetOrders } from './queries';
 import { OrderStatusControl } from './OrderStatusControl';
-import type { OrderStatus } from '../../data/types';
+import type { OrderStatus, PaymentStatus } from '../../data/types';
 
 export const metadata = { title: 'Orders · Admin' };
 
@@ -11,6 +11,12 @@ const STATUS_STYLES: Record<OrderStatus, { label: string; dot: string; chip: str
   made: { label: 'Made', dot: 'bg-blue-500', chip: 'bg-blue-50 text-blue-700 border-blue-200' },
   posted: { label: 'Posted', dot: 'bg-green-600', chip: 'bg-green-50 text-green-700 border-green-200' },
   cancelled: { label: 'Cancelled', dot: 'bg-ink-light', chip: 'bg-cream-dark text-ink-light border-kraft-light' },
+};
+
+const PAYMENT_STYLES: Record<PaymentStatus, { label: string; dot: string; chip: string }> = {
+  unpaid: { label: 'Unpaid', dot: 'bg-amber-500', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
+  paid: { label: 'Paid', dot: 'bg-green-600', chip: 'bg-green-50 text-green-700 border-green-200' },
+  refunded: { label: 'Refunded', dot: 'bg-ink-light', chip: 'bg-cream-dark text-ink-light border-kraft-light' },
 };
 
 function formatDate(iso: string): string {
@@ -62,12 +68,25 @@ export default async function AdminOrdersPage() {
                       </h2>
                       <p className="font-body text-xs text-ink-light mt-1">{formatDate(o.createdAt)}</p>
                     </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 font-body text-xs font-medium px-2.5 py-1 rounded border ${s.chip}`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} aria-hidden="true" />
-                      {s.label}
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                      {(() => {
+                        const p = PAYMENT_STYLES[o.paymentStatus] ?? PAYMENT_STYLES.unpaid;
+                        return (
+                          <span
+                            className={`inline-flex items-center gap-1.5 font-body text-xs font-medium px-2.5 py-1 rounded border ${p.chip}`}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${p.dot}`} aria-hidden="true" />
+                            {p.label}
+                          </span>
+                        );
+                      })()}
+                      <span
+                        className={`inline-flex items-center gap-1.5 font-body text-xs font-medium px-2.5 py-1 rounded border ${s.chip}`}
+                      >
+                        <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} aria-hidden="true" />
+                        {s.label}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Items */}
