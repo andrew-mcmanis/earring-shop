@@ -4,8 +4,10 @@ A handmade **jewellery & gifts** storefront for Andrew's sister (BLG Creations).
 This file tracks what's built and the agreed plan for what's next, organised into
 phases.
 
-_Last updated: 2026-06-26. Live at `earring-shop-coral.vercel.app`._
+_Last updated: 2026-08-10. Live at `earring-shop-coral.vercel.app`._
 _Launch strategy (confirmed): **Stripe first, then launch.**_
+_Phase 2 (Stripe payments + emails) is **built and verified in test mode** on branch
+`phase2-stripe-payments` (not yet merged/deployed). **Phase 3 = go live** is next._
 
 ---
 
@@ -14,8 +16,8 @@ _Launch strategy (confirmed): **Stripe first, then launch.**_
 | Phase | What | Status |
 |-------|------|--------|
 | **1** | The store itself | ✅ complete |
-| **2** | Take payment online (Stripe + automatic emails) | **next** |
-| **3** | Launch readiness → go live | after Phase 2 |
+| **2** | Take payment online (Stripe + automatic emails) | ✅ built & test-mode verified (branch, not deployed) |
+| **3** | Launch readiness → go live | **next** |
 | **4** | Growth & future | post-launch / optional |
 | — | Parallel: content (photos, copy, policies) | owner, ongoing |
 
@@ -56,7 +58,16 @@ Supabase.
 
 ---
 
-## Phase 2 — Take payment online (Stripe + automatic emails) — NEXT
+## Phase 2 — Take payment online (Stripe + automatic emails) — ✅ COMPLETE (test-mode; not deployed)
+
+**Status (2026-08-10):** Built and **verified end-to-end in Stripe test mode** on
+branch `phase2-stripe-payments` (14 commits, **not merged/deployed**). Verified:
+success → paid + sold-out flip + both emails, webhook idempotency, and card
+decline. Spec/plan in `docs/superpowers/`; owner setup guide in
+`docs/SETUP-payments.md`. Note: the payment columns migration shipped as **`0010`**
+(not `0004` as originally numbered below — four migrations landed in between).
+Order emails now include the BLG wordmark logo. Deploying to real customers is
+Phase 3.
 
 **Goal:** customers pay by card on the site; the order is marked paid and both the
 customer and the owner get an email. All major decisions are locked (build detail
@@ -80,7 +91,7 @@ test sender until the custom domain is verified in Phase 3.
 
 ---
 
-## Phase 3 — Launch readiness → go live
+## Phase 3 — Launch readiness → go live — NEXT
 
 Make it production-ready, then flip the switch.
 
