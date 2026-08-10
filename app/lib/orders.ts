@@ -162,7 +162,9 @@ export async function createOrderAndIntent(
         shipping,
         fulfilment_method: isPickup ? 'pickup' : 'delivery',
         status: 'new',
-        payment_status: 'unpaid',
+        // payment_status intentionally omitted — the column DEFAULTs to 'unpaid'.
+        // This keeps the INSERT valid both before AND after migration 0010, so a
+        // code-ahead-of-schema deploy window never silently drops orders.
       })
       .select('id, order_number')
       .single();
@@ -208,10 +210,14 @@ export async function createOrderAndIntent(
           automatic_payment_methods: { enabled: true },
           metadata: { order_id: order.id, reference },
         });
-        await supabase
+        const { error: intentSaveError } = await supabase
           .from('orders')
           .update({ stripe_payment_intent: intent.id })
           .eq('id', order.id);
+        if (intentSaveError) {
+          // Non-fatal: the webhook keys on metadata.order_id and re-writes this.
+          console.error('[order] failed to store payment intent id:', intentSaveError.message, { reference });
+        }
         return {
           status: 'success',
           reference,
