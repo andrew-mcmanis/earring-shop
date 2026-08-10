@@ -133,8 +133,9 @@ Make it production-ready, then flip the switch.
    first item pays the full price, each additional item pays 50% — plus free
    pickup, set on the `/admin/delivery` page. Built.
 2. **Custom domain** — which domain. _Blocks Phase 3 + branded email sender._
-3. **Owner email timing** — fire on **payment success** (recommended, consistent)
-   or at order placement (earlier visibility).
+3. **Owner email timing** — RESOLVED (2026-08-09): fire on **payment success**,
+   from the same webhook as the customer email (one code path; no alerts for
+   abandoned/unpaid orders).
 4. **VAT** — confirmed **none** (not registered).
 
 ---
