@@ -6,19 +6,26 @@ interface LastOrder {
   reference: string | null;
   method: 'delivery' | 'pickup';
   collection: { address: string | null; note: string | null } | null;
+  paid?: boolean;
 }
 
 export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
   const [order, setOrder] = useState<LastOrder | null>(null);
   const [checked, setChecked] = useState(false);
+  const [redirectStatus, setRedirectStatus] = useState<string | null>(null);
 
   useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      setRedirectStatus(params.get('redirect_status'));
+    } catch {
+      // ignore
+    }
     try {
       const raw = sessionStorage.getItem('blg-last-order');
       if (raw) {
         setOrder(JSON.parse(raw) as LastOrder);
-        // One-shot handoff: don't leave the private collection address sitting
-        // in storage after it has been shown (shared/public machines).
+        // One-shot: don't leave the private collection address in storage.
         sessionStorage.removeItem('blg-last-order');
       }
     } catch {
@@ -27,13 +34,21 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
     setChecked(true);
   }, []);
 
-  // Only trust the cached payload when it belongs to the order this page is
-  // for: either the references match, or neither side has one (the demo-mode
-  // and save-failure success paths never issue a reference). A stale payload
-  // from a different order always carries a mismatched reference.
   const matchedOrder =
     order && (order.reference ?? null) === (fallbackRef ?? null) ? order : null;
   const reference = matchedOrder?.reference ?? fallbackRef;
+  // Paid when either the stored flag says so, or Stripe redirected with success.
+  const paid = Boolean(matchedOrder?.paid) || redirectStatus === 'succeeded';
+
+  // A returned-but-not-succeeded 3-D Secure redirect: payment didn't complete.
+  if (checked && redirectStatus && redirectStatus !== 'succeeded') {
+    return (
+      <p className="font-body text-base text-ink-light max-w-md leading-relaxed" role="alert">
+        Your payment wasn&apos;t completed. Please return to the checkout and try again — you
+        haven&apos;t been charged.
+      </p>
+    );
+  }
 
   return (
     <>
@@ -44,8 +59,6 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
         </p>
       )}
 
-      {/* Wait for the sessionStorage read before asserting a method — otherwise
-          every pickup confirmation briefly flashes delivery-flavoured copy. */}
       {!checked ? null : matchedOrder?.method === 'pickup' && matchedOrder.collection?.address ? (
         <div className="font-body text-base text-ink-light max-w-md leading-relaxed flex flex-col gap-2">
           <p>Your order is for collection. You can pick it up from:</p>
@@ -58,6 +71,11 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
       ) : matchedOrder?.method === 'pickup' ? (
         <p className="font-body text-base text-ink-light max-w-md leading-relaxed">
           Your order is for collection — we&apos;ll be in touch with the details shortly.
+        </p>
+      ) : paid ? (
+        <p className="font-body text-base text-ink-light max-w-md leading-relaxed">
+          Payment received — we&apos;ve emailed your confirmation. We&apos;ll be in touch about
+          delivery. Thank you!
         </p>
       ) : (
         <p className="font-body text-base text-ink-light max-w-md leading-relaxed">
