@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { SITE_URL } from './site';
 
 export interface OrderEmailData {
   reference: string;
@@ -15,7 +16,6 @@ export interface OrderEmailData {
   collection: { address: string | null; note: string | null } | null;
 }
 
-const KRAFT = '#B5865A';
 const INK = '#1A1A1A';
 const CREAM = '#FDF8F0';
 
@@ -71,7 +71,7 @@ function shell(title: string, inner: string): string {
   return `
   <div style="background:${CREAM};padding:24px;font-family:Georgia,serif;">
     <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e6dccb;border-radius:8px;padding:28px;">
-      <h1 style="font-family:Georgia,serif;color:${KRAFT};margin:0 0 4px;font-size:26px;">BLG Creations</h1>
+      <img src="${SITE_URL}/logo/BLG_Creations_wordmark.png" alt="BLG Creations" width="200" style="display:block;width:200px;max-width:60%;height:auto;margin:0 0 12px;border:0;" />
       <h2 style="font-family:Georgia,serif;color:${INK};margin:0 0 16px;font-size:18px;font-weight:normal;">${title}</h2>
       ${inner}
     </div>
