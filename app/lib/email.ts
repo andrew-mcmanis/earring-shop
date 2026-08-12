@@ -125,6 +125,9 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
     await resend.emails.send({
       from,
       to: data.customerEmail,
+      // The sender (from) is a send-only brand address; route replies to the
+      // owner's real inbox so a customer's reply reaches her.
+      replyTo: ownerTo || undefined,
       subject: `Your BLG Creations order ${data.reference}`,
       html: customerHtml(data),
     });
@@ -137,6 +140,8 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
       await resend.emails.send({
         from,
         to: ownerTo,
+        // Let the owner reply straight to the customer from the alert.
+        replyTo: data.customerEmail,
         subject: `New order ${data.reference} (${money(data.subtotal + data.shipping)})`,
         html: ownerHtml(data),
       });
