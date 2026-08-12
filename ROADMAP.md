@@ -91,14 +91,24 @@ test sender until the custom domain is verified in Phase 3.
 
 ---
 
-## Phase 3 — Launch readiness → go live — NEXT
+## Phase 3 — Launch readiness → go live — IN PROGRESS
 
-Make it production-ready, then flip the switch.
+Make it production-ready, then flip the switch. **Step-by-step launch runbook:
+`docs/GO-LIVE.md`.** As of 2026-08-12 the shop is **live on `blgcreations.co.uk`
+in Stripe TEST mode** (Phase 2 deployed + validated); Bev is testing. Remaining:
+policy/about pages, optional Supabase Pro, the pre-launch DB wipe, and the live
+key/webhook flip + final QA.
 
-- **Custom domain** — buy + connect to Vercel; set `NEXT_PUBLIC_APP_URL` for stable
-  canonical / OG URLs.
-- **Verified email sender** — verify the custom domain in Resend so emails come
-  from her brand, not a test address.
+- ✅ **Custom domain** — `blgcreations.co.uk` (apex) connected to Vercel;
+  `NEXT_PUBLIC_APP_URL=https://blgcreations.co.uk` set. `www`→apex redirect.
+- ✅ **Verified email sender** — `blgcreations.co.uk` verified in Resend; emails
+  send from `orders@blgcreations.co.uk` (branded, with logo).
+- **Legal / policy pages** — returns & refunds, privacy, terms. Needed before
+  taking real money and reassures buyers.
+- **About the maker + contact route** — a short "meet the maker" section and a
+  customer contact link. Needs content from the owner (her words + a shop email;
+  photo optional). Parked from the 2026-06-27 award pass — the two biggest
+  remaining trust gaps for a handmade shop.
 - **Legal / policy pages** — returns & refunds, privacy, terms. Needed before
   taking real money and reassures buyers.
 - **About the maker + contact route** — a short "meet the maker" section and a
