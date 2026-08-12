@@ -125,9 +125,10 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
     await resend.emails.send({
       from,
       to: data.customerEmail,
-      // The sender (from) is a send-only brand address; route replies to the
-      // owner's real inbox so a customer's reply reaches her.
-      replyTo: ownerTo || undefined,
+      // No explicit Reply-To: a customer's reply goes to the From address
+      // (orders@blgcreations.co.uk) so it matches the sender. That address is
+      // forwarded to the owner's inbox via an email-forwarding rule set up at
+      // the domain registrar.
       subject: `Your BLG Creations order ${data.reference}`,
       html: customerHtml(data),
     });
