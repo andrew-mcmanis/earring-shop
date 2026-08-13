@@ -126,9 +126,9 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
       from,
       to: data.customerEmail,
       // No explicit Reply-To: a customer's reply goes to the From address
-      // (orders@blgcreations.co.uk) so it matches the sender. That address is
-      // forwarded to the owner's inbox via an email-forwarding rule set up at
-      // the domain registrar.
+      // (orders@blgcreations.co.uk) so it matches the sender. That address is a
+      // real IONOS mailbox the owner reads and replies from — so replies stay
+      // branded as orders@.
       subject: `Your BLG Creations order ${data.reference}`,
       html: customerHtml(data),
     });
@@ -141,8 +141,11 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
       await resend.emails.send({
         from,
         to: ownerTo,
-        // Let the owner reply straight to the customer from the alert.
-        replyTo: data.customerEmail,
+        // Pure notification — no customer Reply-To on purpose. Replying to this
+        // alert (from the owner's own inbox) would send as that inbox's address,
+        // not the brand. The owner corresponds with customers in the orders@
+        // mailbox instead (that's where customer replies land), keeping every
+        // customer-facing email branded as orders@blgcreations.co.uk.
         subject: `New order ${data.reference} (${money(data.subtotal + data.shipping)})`,
         html: ownerHtml(data),
       });
