@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Prose } from '../../components/Prose';
+import { ORDERS_EMAIL } from '../../lib/site';
 
 export const metadata: Metadata = {
   title: 'Returns Policy',
@@ -81,9 +82,7 @@ export default function ReturnsPage() {
       <ol>
         <li>
           Contact BLG Creations via{' '}
-          <a href="mailto:orders@blgcreations.co.uk">
-            orders@blgcreations.co.uk
-          </a>{' '}
+          <a href={`mailto:${ORDERS_EMAIL}`}>{ORDERS_EMAIL}</a>{' '}
           within the relevant timeframe with your order number and reason for
           return.
         </li>
@@ -103,9 +102,7 @@ export default function ReturnsPage() {
         If you have any questions about your order or this returns policy,
         please contact BLG Creations before making a return. We are always happy
         to help. You can reach us at{' '}
-        <a href="mailto:orders@blgcreations.co.uk">
-          orders@blgcreations.co.uk
-        </a>
+        <a href={`mailto:${ORDERS_EMAIL}`}>{ORDERS_EMAIL}</a>
         .
       </p>
     </Prose>

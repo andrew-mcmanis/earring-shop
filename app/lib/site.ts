@@ -12,3 +12,6 @@ export const SITE_URL =
     : process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000');
+
+/** Public contact / customer-service mailbox, shown on the content pages. */
+export const ORDERS_EMAIL = 'orders@blgcreations.co.uk';
