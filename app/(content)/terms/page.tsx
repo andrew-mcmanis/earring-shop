@@ -19,8 +19,8 @@ export default function TermsPage() {
           4. Set "Last updated" to the actual publish date at go-live.
           Remove this comment once confirmed. */}
       <h1>Terms &amp; Conditions</h1>
-      <p className="lead">Last updated: 16 August 2026</p>
-      <p>
+      <p>Last updated: 16 August 2026</p>
+      <p className="lead">
         These terms apply when you buy from BLG Creations at blgcreations.co.uk.
         BLG Creations is run by Bev Gallifant as a sole trader. Please read them
         alongside our <a href="/privacy">Privacy Policy</a> and{' '}

@@ -18,8 +18,8 @@ export default function PrivacyPage() {
           3. Set "Last updated" to the actual publish date at go-live.
           Remove this comment once confirmed. */}
       <h1>Privacy Policy</h1>
-      <p className="lead">Last updated: 16 August 2026</p>
-      <p>
+      <p>Last updated: 16 August 2026</p>
+      <p className="lead">
         This policy explains how BLG Creations handles the personal information
         you provide when you visit or buy from blgcreations.co.uk. We only
         collect what we need to process your order, and we never sell your
