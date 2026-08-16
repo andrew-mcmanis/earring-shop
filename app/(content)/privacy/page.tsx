@@ -9,13 +9,12 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <Prose>
-      {/* REVIEW BEFORE GO-LIVE — assumptions in this draft, confirm with Bev:
-          1. Trading status: sole trader, "Bev Gallifant trading as BLG
-             Creations". Confirm the exact legal/trading name.
-          2. ICO registration: a sole trader processing customer data online
-             likely must register with the ICO (~£40/yr). Bev to action — not a
-             code change.
-          3. Set "Last updated" to the actual publish date at go-live.
+      {/* REVIEW BEFORE GO-LIVE — confirm before publishing:
+          1. ICO: as an online shop handling customer data, check the ICO
+             self-assessment at ico.org.uk — a data-protection fee may apply
+             (some very small operations are exempt). Owner action, not a code
+             change.
+          2. Set "Last updated" to the actual publish date at go-live.
           Remove this comment once confirmed. */}
       <h1>Privacy Policy</h1>
       <p>Last updated: 16 August 2026</p>
@@ -28,10 +27,10 @@ export default function PrivacyPage() {
 
       <h2>Who We Are</h2>
       <p>
-        BLG Creations is a small handmade jewellery and gifts business run by
-        Bev Gallifant as a sole trader. We are the &ldquo;data controller&rdquo;
-        for the information described here. For any privacy question, or to
-        exercise your rights below, contact us at{' '}
+        BLG Creations is a small independent maker of handmade jewellery and
+        gifts. We are the &ldquo;data controller&rdquo; for the information
+        described here. For any privacy question, or to exercise your rights
+        below, contact us at{' '}
         <a href={`mailto:${ORDERS_EMAIL}`}>{ORDERS_EMAIL}</a>.
       </p>
 

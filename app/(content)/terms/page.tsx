@@ -9,21 +9,20 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <Prose>
-      {/* REVIEW BEFORE GO-LIVE — assumptions in this draft, confirm with Bev:
-          1. Trading status: sole trader, "Bev Gallifant trading as BLG
-             Creations". Confirm the exact legal/trading name.
-          2. VAT: drafted as NOT VAT-registered (no VAT added to prices).
-             Confirm — change the "Prices and Payment" wording if registered.
-          3. Governing law: drafted as England & Wales. Change if Bev trades
-             from Scotland or Northern Ireland.
-          4. Set "Last updated" to the actual publish date at go-live.
+      {/* REVIEW BEFORE GO-LIVE — confirm before publishing:
+          1. Governing law: drafted as England & Wales. Change if the seller
+             is based in Scotland or Northern Ireland.
+          2. Set "Last updated" to the actual publish date at go-live.
+          (VAT: not registered — no VAT added to prices; correct for a small
+          maker under the threshold.)
           Remove this comment once confirmed. */}
       <h1>Terms &amp; Conditions</h1>
       <p>Last updated: 16 August 2026</p>
       <p className="lead">
         These terms apply when you buy from BLG Creations at blgcreations.co.uk.
-        BLG Creations is run by Bev Gallifant as a sole trader. Please read them
-        alongside our <a href="/privacy">Privacy Policy</a> and{' '}
+        BLG Creations is a small independent maker of handmade jewellery and
+        gifts. Please read them alongside our{' '}
+        <a href="/privacy">Privacy Policy</a> and{' '}
         <a href="/returns">Returns Policy</a>.
       </p>
 
