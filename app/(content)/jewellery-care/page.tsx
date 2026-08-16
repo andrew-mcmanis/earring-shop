@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Prose } from '../../components/Prose';
 import { INSTAGRAM_URL, INSTAGRAM_HANDLE } from '../../lib/site';
+import { CARE_TIPS } from '../../lib/care';
 
 export const metadata: Metadata = {
   title: 'Jewellery Care',
@@ -84,23 +85,12 @@ function MoonIcon({ className }: IconProps) {
   );
 }
 
-const tips: { Icon: (props: IconProps) => React.ReactElement; text: string }[] = [
-  {
-    Icon: SprayIcon,
-    text: 'Avoid sprays or lotions near any jewellery as they can cause tarnishing.',
-  },
-  {
-    Icon: BoxIcon,
-    text: 'Keep jewellery stored separately from other pieces, in a cool, dark place using jewellery boxes & pouches.',
-  },
-  {
-    Icon: DropIcon,
-    text: 'Keep jewellery from getting wet. Remove before bathing or swimming.',
-  },
-  {
-    Icon: MoonIcon,
-    text: 'Remove jewellery before going to bed to prevent accidents in your sleep.',
-  },
+// Pair each shared care tip with its icon by position (order matches CARE_TIPS).
+const tips = [
+  { Icon: SprayIcon, text: CARE_TIPS[0] },
+  { Icon: BoxIcon, text: CARE_TIPS[1] },
+  { Icon: DropIcon, text: CARE_TIPS[2] },
+  { Icon: MoonIcon, text: CARE_TIPS[3] },
 ];
 
 export default function JewelleryCarePage() {

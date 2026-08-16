@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
-import { SITE_URL } from './site';
+import { SITE_URL, INSTAGRAM_URL, INSTAGRAM_HANDLE } from './site';
+import { CARE_TIPS } from './care';
 
 export interface OrderEmailData {
   reference: string;
@@ -67,6 +68,26 @@ function fulfilmentBlock(data: OrderEmailData): string {
   return `<h3 style="font-family:Georgia,serif;color:${INK};margin:20px 0 4px;">Delivery to</h3><p style="margin:4px 0;color:${INK};">${line}</p>`;
 }
 
+// Care tips + "follow us" QR, shown on the customer confirmation only. Tips come
+// from the shared CARE_TIPS (same source as the /jewellery-care page). The QR is
+// a hosted image (like the logo) so it survives email clients that strip data
+// URIs; the text link below it covers blocked images and mobile readers.
+function careBlock(): string {
+  const tips = CARE_TIPS.map(
+    (t) => `<li style="margin:6px 0;">${esc(t)}</li>`,
+  ).join('');
+  return `
+    <h3 style="font-family:Georgia,serif;color:${INK};margin:24px 0 4px;">Caring for your jewellery</h3>
+    <ul style="margin:8px 0;padding-left:20px;color:${INK};font-family:Georgia,serif;font-size:14px;">
+      ${tips}
+    </ul>
+    <p style="color:#7a6a58;font-size:14px;margin:18px 0 8px;">Follow us for more beautiful designs:</p>
+    <a href="${INSTAGRAM_URL}" style="text-decoration:none;">
+      <img src="${SITE_URL}/care/instagram-qr.png" alt="Scan to follow ${esc(INSTAGRAM_HANDLE)} on Instagram" width="130" style="display:block;width:130px;height:auto;border:0;margin:0 0 6px;" />
+    </a>
+    <a href="${INSTAGRAM_URL}" style="color:${INK};font-family:Georgia,serif;font-size:14px;">${esc(INSTAGRAM_HANDLE)}</a>`;
+}
+
 function shell(title: string, inner: string): string {
   return `
   <div style="background:${CREAM};padding:24px;font-family:Georgia,serif;">
@@ -85,6 +106,7 @@ function customerHtml(data: OrderEmailData): string {
        <strong>${esc(data.reference)}</strong>.</p>
      ${itemsTable(data)}
      ${fulfilmentBlock(data)}
+     ${careBlock()}
      <p style="color:#7a6a58;margin-top:20px;font-size:13px;">Each piece is handmade and one of a kind — thank you for supporting a small maker.</p>`,
   );
 }
