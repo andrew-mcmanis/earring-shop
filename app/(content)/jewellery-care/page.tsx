@@ -114,7 +114,7 @@ export default function JewelleryCarePage() {
         </p>
       </Prose>
 
-      <ul role="list" className="mt-8 grid list-none grid-cols-1 gap-4 pl-0 sm:grid-cols-2">
+      <ul role="list" className="mt-8 mb-10 grid list-none grid-cols-1 gap-4 pl-0 sm:grid-cols-2">
         {tips.map(({ Icon, text }) => (
           <li
             key={text}
@@ -129,7 +129,7 @@ export default function JewelleryCarePage() {
       </ul>
 
       <Prose>
-        <p className="mt-10">Thank you so much for your purchase!</p>
+        <p>Thank you so much for your purchase!</p>
         <p>
           Follow us on Instagram at{' '}
           <a
