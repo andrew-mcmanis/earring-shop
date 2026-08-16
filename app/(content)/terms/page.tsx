@@ -9,13 +9,6 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <Prose>
-      {/* REVIEW BEFORE GO-LIVE — confirm before publishing:
-          1. Governing law: drafted as England & Wales. Change if the seller
-             is based in Scotland or Northern Ireland.
-          2. Set "Last updated" to the actual publish date at go-live.
-          (VAT: not registered — no VAT added to prices; correct for a small
-          maker under the threshold.)
-          Remove this comment once confirmed. */}
       <h1>Terms &amp; Conditions</h1>
       <p>Last updated: 16 August 2026</p>
       <p className="lead">

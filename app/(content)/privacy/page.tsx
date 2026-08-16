@@ -9,13 +9,6 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <Prose>
-      {/* REVIEW BEFORE GO-LIVE — confirm before publishing:
-          1. ICO: as an online shop handling customer data, check the ICO
-             self-assessment at ico.org.uk — a data-protection fee may apply
-             (some very small operations are exempt). Owner action, not a code
-             change.
-          2. Set "Last updated" to the actual publish date at go-live.
-          Remove this comment once confirmed. */}
       <h1>Privacy Policy</h1>
       <p>Last updated: 16 August 2026</p>
       <p className="lead">
