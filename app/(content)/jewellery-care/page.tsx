@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Prose } from '../../components/Prose';
+import { INSTAGRAM_URL, INSTAGRAM_HANDLE } from '../../lib/site';
 
 export const metadata: Metadata = {
   title: 'Jewellery Care',
@@ -113,7 +114,7 @@ export default function JewelleryCarePage() {
         </p>
       </Prose>
 
-      <ul className="mt-8 grid list-none grid-cols-1 gap-4 pl-0 sm:grid-cols-2">
+      <ul role="list" className="mt-8 grid list-none grid-cols-1 gap-4 pl-0 sm:grid-cols-2">
         {tips.map(({ Icon, text }) => (
           <li
             key={text}
@@ -132,11 +133,11 @@ export default function JewelleryCarePage() {
         <p>
           Follow us on Instagram at{' '}
           <a
-            href="https://instagram.com/blg.creations"
+            href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
           >
-            @BLG.Creations
+            {INSTAGRAM_HANDLE}
           </a>{' '}
           for more beautiful designs.
         </p>

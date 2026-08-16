@@ -15,3 +15,7 @@ export const SITE_URL =
 
 /** Public contact / customer-service mailbox, shown on the content pages. */
 export const ORDERS_EMAIL = 'orders@blgcreations.co.uk';
+
+/** Public Instagram profile + handle, shown on the content pages. */
+export const INSTAGRAM_URL = 'https://instagram.com/blg.creations';
+export const INSTAGRAM_HANDLE = '@BLG.Creations';

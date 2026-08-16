@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Prose } from '../../components/Prose';
-import { ORDERS_EMAIL } from '../../lib/site';
+import { ORDERS_EMAIL, INSTAGRAM_URL, INSTAGRAM_HANDLE } from '../../lib/site';
 
 export const metadata: Metadata = {
   title: 'Contact',
@@ -27,11 +27,11 @@ export default function ContactPage() {
       <p>
         Follow{' '}
         <a
-          href="https://instagram.com/blg.creations"
+          href={INSTAGRAM_URL}
           target="_blank"
           rel="noopener noreferrer"
         >
-          @BLG.Creations
+          {INSTAGRAM_HANDLE}
         </a>{' '}
         for new designs, works in progress and updates.
       </p>
