@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { SITE_URL, INSTAGRAM_URL, INSTAGRAM_HANDLE } from './site';
+import { SITE_URL, INSTAGRAM_URL, INSTAGRAM_HANDLE, ORDERS_EMAIL } from './site';
 import { CARE_TIPS } from './care';
 
 export interface OrderEmailData {
@@ -17,8 +17,17 @@ export interface OrderEmailData {
   collection: { address: string | null; note: string | null } | null;
 }
 
+// Palette (brand tokens). Warm cream "paper", ink text, kraft accents.
 const INK = '#1A1A1A';
+const BODY = '#4A4A4A'; // ink-light — body copy
+const MUTED = '#8A7C6A'; // warm grey — secondary text
+const KRAFT = '#B5865A';
+const KRAFT_DARK = '#8B6347';
 const CREAM = '#FDF8F0';
+const CARD = '#FFFFFF';
+const PANEL = '#F6EFE1'; // soft kraft-tinted panel
+const HAIR = '#EADFC8'; // hairline rule
+const SERIF = "Georgia, 'Times New Roman', serif";
 
 function money(n: number): string {
   return `£${n.toFixed(2)}`;
@@ -30,13 +39,24 @@ function esc(s: string): string {
   );
 }
 
+// Vertical spacer between sections (email-safe — margins are unreliable).
+function gap(px = 28): string {
+  return `<div style="line-height:${px}px;height:${px}px;font-size:0;">&nbsp;</div>`;
+}
+
+// Uppercase, letter-spaced section label — the repeating rhythm that ties the
+// whole email together.
+function label(text: string): string {
+  return `<div style="font-family:${SERIF};font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${KRAFT_DARK};margin:0 0 12px;">${esc(text)}</div>`;
+}
+
 function itemsTable(data: OrderEmailData): string {
   const rows = data.items
     .map(
       (i) => `
       <tr>
-        <td style="padding:6px 0;color:${INK};">${esc(i.name)} <span style="color:#7a6a58;">×${i.quantity}</span></td>
-        <td style="padding:6px 0;text-align:right;color:${INK};">${money(i.unitPrice * i.quantity)}</td>
+        <td style="padding:9px 0;border-bottom:1px solid ${HAIR};font-family:${SERIF};font-size:15px;color:${INK};">${esc(i.name)}${i.quantity > 1 ? ` <span style="color:${MUTED};">&times; ${i.quantity}</span>` : ''}</td>
+        <td style="padding:9px 0;border-bottom:1px solid ${HAIR};font-family:${SERIF};font-size:15px;color:${INK};text-align:right;white-space:nowrap;">${money(i.unitPrice * i.quantity)}</td>
       </tr>`,
     )
     .join('');
@@ -44,86 +64,139 @@ function itemsTable(data: OrderEmailData): string {
   const shipLabel = data.fulfilmentMethod === 'pickup' ? 'Collection' : 'Delivery';
   const shipValue = data.shipping > 0 ? money(data.shipping) : 'Free';
   return `
-    <table role="presentation" width="100%" style="border-collapse:collapse;font-family:Georgia,serif;font-size:15px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
       ${rows}
-      <tr><td colspan="2" style="border-top:1px solid #e6dccb;padding-top:8px;"></td></tr>
-      <tr><td style="padding:4px 0;color:#7a6a58;">Subtotal</td><td style="padding:4px 0;text-align:right;color:${INK};">${money(data.subtotal)}</td></tr>
-      <tr><td style="padding:4px 0;color:#7a6a58;">${shipLabel}</td><td style="padding:4px 0;text-align:right;color:${INK};">${shipValue}</td></tr>
-      <tr><td style="padding:8px 0 0;font-weight:bold;color:${INK};">Total</td><td style="padding:8px 0 0;text-align:right;font-weight:bold;color:${INK};">${money(total)}</td></tr>
+      <tr>
+        <td style="padding:12px 0 4px;font-family:${SERIF};font-size:14px;color:${MUTED};">Subtotal</td>
+        <td style="padding:12px 0 4px;font-family:${SERIF};font-size:14px;color:${BODY};text-align:right;">${money(data.subtotal)}</td>
+      </tr>
+      <tr>
+        <td style="padding:2px 0;font-family:${SERIF};font-size:14px;color:${MUTED};">${shipLabel}</td>
+        <td style="padding:2px 0;font-family:${SERIF};font-size:14px;color:${BODY};text-align:right;">${shipValue}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 0 0;border-top:2px solid ${INK};font-family:${SERIF};font-size:17px;font-weight:bold;color:${INK};">Total</td>
+        <td style="padding:12px 0 0;border-top:2px solid ${INK};font-family:${SERIF};font-size:17px;font-weight:bold;color:${INK};text-align:right;">${money(total)}</td>
+      </tr>
     </table>`;
 }
 
 function fulfilmentBlock(data: OrderEmailData): string {
   if (data.fulfilmentMethod === 'pickup') {
-    const addr = data.collection?.address
-      ? `<p style="margin:4px 0;white-space:pre-line;color:${INK};">${esc(data.collection.address)}</p>`
-      : `<p style="margin:4px 0;color:${INK};">We'll be in touch with the collection details.</p>`;
-    const note = data.collection?.note ? `<p style="margin:4px 0;color:#7a6a58;">${esc(data.collection.note)}</p>` : '';
-    return `<h3 style="font-family:Georgia,serif;color:${INK};margin:20px 0 4px;">Collection</h3>${addr}${note}`;
+    const body = data.collection?.address
+      ? `<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};white-space:pre-line;">${esc(data.collection.address)}</p>`
+      : `<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};">We&rsquo;ll be in touch with the collection details.</p>`;
+    const note = data.collection?.note
+      ? `<p style="margin:8px 0 0;font-family:${SERIF};font-size:14px;line-height:1.6;color:${MUTED};">${esc(data.collection.note)}</p>`
+      : '';
+    return `${label('Collection')}${body}${note}`;
   }
   const line = [data.address?.line, data.address?.city, data.address?.postcode]
     .filter(Boolean)
     .map((s) => esc(String(s)))
-    .join(', ');
-  return `<h3 style="font-family:Georgia,serif;color:${INK};margin:20px 0 4px;">Delivery to</h3><p style="margin:4px 0;color:${INK};">${line}</p>`;
+    .join('<br>');
+  return `${label('Delivery to')}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};">${line}</p>`;
 }
 
-// Care tips + "follow us" QR, shown on the customer confirmation only. Tips come
-// from the shared CARE_TIPS (same source as the /jewellery-care page). The QR is
-// a hosted image (like the logo) so it survives email clients that strip data
-// URIs; the text link below it covers blocked images and mobile readers.
+// Care tips panel + centred "follow us" QR — customer confirmation only. Tips
+// come from the shared CARE_TIPS (same source as the /jewellery-care page). The
+// QR is a hosted image (like the logo) so it survives clients that strip data
+// URIs; the text link beneath covers blocked images and mobile readers.
 function careBlock(): string {
   const tips = CARE_TIPS.map(
-    (t) => `<li style="margin:6px 0;">${esc(t)}</li>`,
+    (t) => `
+        <tr>
+          <td valign="top" style="padding:5px 12px 5px 0;font-family:${SERIF};font-size:16px;line-height:1.5;color:${KRAFT};">&bull;</td>
+          <td valign="top" style="padding:5px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${BODY};">${esc(t)}</td>
+        </tr>`,
   ).join('');
   return `
-    <h3 style="font-family:Georgia,serif;color:${INK};margin:24px 0 4px;">Caring for your jewellery</h3>
-    <ul style="margin:8px 0;padding-left:20px;color:${INK};font-family:Georgia,serif;font-size:14px;">
-      ${tips}
-    </ul>
-    <p style="color:#7a6a58;font-size:14px;margin:18px 0 8px;">Follow us for more beautiful designs:</p>
-    <a href="${INSTAGRAM_URL}" style="text-decoration:none;">
-      <img src="${SITE_URL}/care/instagram-qr.png" alt="Scan to follow ${esc(INSTAGRAM_HANDLE)} on Instagram" width="130" style="display:block;width:130px;height:auto;border:0;margin:0 0 6px;" />
-    </a>
-    <a href="${INSTAGRAM_URL}" style="color:${INK};font-family:Georgia,serif;font-size:14px;">${esc(INSTAGRAM_HANDLE)}</a>`;
+    ${label('Caring for your jewellery')}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${PANEL}" style="background:${PANEL};border-radius:8px;">
+      <tr><td style="padding:18px 22px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${tips}</table>
+      </td></tr>
+    </table>`;
 }
 
-function shell(title: string, inner: string): string {
+function followBlock(): string {
   return `
-  <div style="background:${CREAM};padding:24px;font-family:Georgia,serif;">
-    <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e6dccb;border-radius:8px;padding:28px;">
-      <img src="${SITE_URL}/logo/BLG_Creations_wordmark.png" alt="BLG Creations" width="200" style="display:block;width:200px;max-width:60%;height:auto;margin:0 0 12px;border:0;" />
-      <h2 style="font-family:Georgia,serif;color:${INK};margin:0 0 16px;font-size:18px;font-weight:normal;">${title}</h2>
-      ${inner}
-    </div>
-  </div>`;
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td align="center" style="padding:2px 0;">
+        <div style="font-family:${SERIF};font-size:15px;color:${INK};">Follow us for more beautiful designs</div>
+        <a href="${INSTAGRAM_URL}" style="text-decoration:none;">
+          <img src="${SITE_URL}/care/instagram-qr.png" alt="Scan to follow ${esc(INSTAGRAM_HANDLE)} on Instagram" width="118" style="display:block;width:118px;height:auto;border:0;border-radius:8px;margin:14px auto 10px;" />
+        </a>
+        <a href="${INSTAGRAM_URL}" style="font-family:${SERIF};font-size:14px;font-weight:bold;letter-spacing:0.5px;color:${KRAFT_DARK};text-decoration:none;">${esc(INSTAGRAM_HANDLE)}</a>
+      </td></tr>
+    </table>`;
+}
+
+// Shared chrome: cream page → paper card → centred header (logo + tagline +
+// rule) → greeting → body sections → centred brand footer. Used by both emails.
+function shell(preheader: string, greeting: string, intro: string, inner: string): string {
+  return `
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${CREAM};opacity:0;">${esc(preheader)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${CREAM}" style="background:${CREAM};margin:0;padding:0;">
+    <tr><td align="center" style="padding:30px 14px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="${CARD}" style="width:100%;max-width:600px;background:${CARD};border:1px solid ${HAIR};border-radius:12px;">
+        <tr><td align="center" style="padding:36px 40px 0;">
+          <img src="${SITE_URL}/logo/BLG_Creations_wordmark.png" alt="BLG Creations" width="180" style="display:block;width:180px;max-width:58%;height:auto;border:0;margin:0 auto;" />
+          <div style="font-family:${SERIF};font-size:10px;letter-spacing:3px;text-transform:uppercase;color:${MUTED};margin:10px 0 0;">Handmade Jewellery &amp; Gifts</div>
+          <div style="height:1px;background:${HAIR};line-height:1px;font-size:0;margin:24px 0 0;">&nbsp;</div>
+        </td></tr>
+        <tr><td align="center" style="padding:26px 40px 0;">
+          <h1 style="margin:0;font-family:${SERIF};font-size:24px;font-weight:normal;color:${INK};">${greeting}</h1>
+          ${intro ? `<p style="margin:12px 0 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${BODY};">${intro}</p>` : ''}
+        </td></tr>
+        <tr><td style="padding:30px 40px 4px;">${inner}</td></tr>
+        <tr><td style="padding:4px 40px 36px;">
+          <div style="height:1px;background:${HAIR};line-height:1px;font-size:0;margin:18px 0 22px;">&nbsp;</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+            <div style="font-family:${SERIF};font-size:19px;color:${INK};">BLG Creations</div>
+            <div style="font-family:${SERIF};font-size:12px;color:${MUTED};margin:5px 0 12px;">Handmade with care</div>
+            <a href="mailto:${ORDERS_EMAIL}" style="font-family:${SERIF};font-size:13px;color:${KRAFT_DARK};text-decoration:none;">${ORDERS_EMAIL}</a>
+          </td></tr></table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>`;
 }
 
 function customerHtml(data: OrderEmailData): string {
+  const first = esc(data.customerName.split(' ')[0] || data.customerName);
+  const inner = [
+    `${label('Order ' + data.reference)}${itemsTable(data)}`,
+    fulfilmentBlock(data),
+    careBlock(),
+    followBlock(),
+  ].join(gap());
   return shell(
-    `Thank you for your order, ${esc(data.customerName.split(' ')[0] || data.customerName)}!`,
-    `<p style="color:${INK};">Your payment has been received. Your order reference is
-       <strong>${esc(data.reference)}</strong>.</p>
-     ${itemsTable(data)}
-     ${fulfilmentBlock(data)}
-     ${careBlock()}
-     <p style="color:#7a6a58;margin-top:20px;font-size:13px;">Each piece is handmade and one of a kind — thank you for supporting a small maker.</p>`,
+    `Your BLG Creations order ${data.reference} is confirmed`,
+    `Thank you, ${first}`,
+    'Your payment has been received and your order is confirmed. Here are the details.',
+    inner,
   );
 }
 
 function ownerHtml(data: OrderEmailData): string {
   const contact = [
-    `<strong>${esc(data.customerName)}</strong>`,
-    esc(data.customerEmail),
+    `<span style="color:${INK};font-weight:bold;">${esc(data.customerName)}</span>`,
+    `<a href="mailto:${esc(data.customerEmail)}" style="color:${KRAFT_DARK};text-decoration:none;">${esc(data.customerEmail)}</a>`,
     data.customerPhone ? esc(data.customerPhone) : '',
   ]
     .filter(Boolean)
     .join('<br>');
+  const inner = [
+    `${label('Customer')}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.7;color:${BODY};">${contact}</p>`,
+    `${label('Order ' + data.reference)}${itemsTable(data)}`,
+    fulfilmentBlock(data),
+  ].join(gap());
   return shell(
-    `New order — ${esc(data.reference)}`,
-    `<p style="color:${INK};">${contact}</p>
-     ${itemsTable(data)}
-     ${fulfilmentBlock(data)}`,
+    `New order ${data.reference} — ${money(data.subtotal + data.shipping)}`,
+    `New order &mdash; ${esc(data.reference)}`,
+    '',
+    inner,
   );
 }
 
