@@ -41,3 +41,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .superpowers/
+
+# local dev tooling (Claude Code config + untracked helper scripts)
+.claude/
+/scripts/

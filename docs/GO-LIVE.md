@@ -1,5 +1,7 @@
 # BLG Creations — Go-Live Runbook
 
+> ✅ **LAUNCHED 2026-08-16/17.** The shop is live on `blgcreations.co.uk` in Stripe **live mode**, taking real payments — first real sales are in. This runbook is kept as a historical record of the launch steps.
+
 _The launch-day checklist for switching the shop from **Stripe test mode** to **live, real payments**._
 
 ## Where things stand (as of 2026-08-12)

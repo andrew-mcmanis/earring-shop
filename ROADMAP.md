@@ -4,10 +4,8 @@ A handmade **jewellery & gifts** storefront for Andrew's sister (BLG Creations).
 This file tracks what's built and the agreed plan for what's next, organised into
 phases.
 
-_Last updated: 2026-08-10. Live at `earring-shop-coral.vercel.app`._
-_Launch strategy (confirmed): **Stripe first, then launch.**_
-_Phase 2 (Stripe payments + emails) is **built and verified in test mode** on branch
-`phase2-stripe-payments` (not yet merged/deployed). **Phase 3 = go live** is next._
+_Last updated: 2026-08-17. **LIVE at `blgcreations.co.uk`**, taking real card payments (Stripe live mode) — the first real customer sales are in._
+_Phases 1–3 are complete and deployed. What's left is optional/post-launch (Phase 4) plus the owner content track._
 
 ---
 
@@ -16,10 +14,11 @@ _Phase 2 (Stripe payments + emails) is **built and verified in test mode** on br
 | Phase | What | Status |
 |-------|------|--------|
 | **1** | The store itself | ✅ complete |
-| **2** | Take payment online (Stripe + automatic emails) | ✅ built & test-mode verified (branch, not deployed) |
-| **3** | Launch readiness → go live | **next** |
-| **4** | Growth & future | post-launch / optional |
-| — | Parallel: content (photos, copy, policies) | owner, ongoing |
+| **2** | Take payment online (Stripe + automatic emails) | ✅ complete & live |
+| **3** | Launch readiness → go live | ✅ complete — **launched 2026-08-16/17** |
+| **Post-launch** | Content/policy pages, email redesign, refund sync, cart-qty fix | ✅ shipped & live |
+| **4** | Growth & future | optional |
+| — | Parallel: content (photos, copy) | owner, ongoing |
 
 ---
 
@@ -58,16 +57,14 @@ Supabase.
 
 ---
 
-## Phase 2 — Take payment online (Stripe + automatic emails) — ✅ COMPLETE (test-mode; not deployed)
+## Phase 2 — Take payment online (Stripe + automatic emails) — ✅ COMPLETE & LIVE
 
-**Status (2026-08-10):** Built and **verified end-to-end in Stripe test mode** on
-branch `phase2-stripe-payments` (14 commits, **not merged/deployed**). Verified:
-success → paid + sold-out flip + both emails, webhook idempotency, and card
-decline. Spec/plan in `docs/superpowers/`; owner setup guide in
-`docs/SETUP-payments.md`. Note: the payment columns migration shipped as **`0010`**
-(not `0004` as originally numbered below — four migrations landed in between).
-Order emails now include the BLG wordmark logo. Deploying to real customers is
-Phase 3.
+**Status:** Merged and **deployed to production**; the shop takes real card
+payments (Stripe **live** mode) with branded confirmation + owner emails from
+`orders@blgcreations.co.uk`. Verified end-to-end: success → paid + sold-out flip
++ both emails, webhook idempotency, card decline. Payment columns shipped as
+migration **`0010`** (not `0004` as numbered in the reference below). Spec/plan in
+`docs/superpowers/`; owner setup guide in `docs/SETUP-payments.md`.
 
 **Goal:** customers pay by card on the site; the order is marked paid and both the
 customer and the owner get an email. All major decisions are locked (build detail
@@ -91,38 +88,26 @@ test sender until the custom domain is verified in Phase 3.
 
 ---
 
-## Phase 3 — Launch readiness → go live — IN PROGRESS
+## Phase 3 — Launch readiness → go live — ✅ COMPLETE (launched 2026-08-16/17)
 
-Make it production-ready, then flip the switch. **Step-by-step launch runbook:
-`docs/GO-LIVE.md`.** As of 2026-08-12 the shop is **live on `blgcreations.co.uk`
-in Stripe TEST mode** (Phase 2 deployed + validated); Bev is testing. Remaining:
-policy/about pages, optional Supabase Pro, the pre-launch DB wipe, and the live
-key/webhook flip + final QA.
+The shop is **live on `blgcreations.co.uk` in Stripe live mode**, taking real card
+payments, with the first real customer sales in (BLG-1, BLG-2). Launch runbook
+(historical): `docs/GO-LIVE.md`.
 
-- ✅ **Custom domain** — `blgcreations.co.uk` (apex) connected to Vercel;
-  `NEXT_PUBLIC_APP_URL=https://blgcreations.co.uk` set. `www`→apex redirect.
-- ✅ **Verified email sender** — `blgcreations.co.uk` verified in Resend; emails
-  send from `orders@blgcreations.co.uk` (branded, with logo).
-- **Legal / policy pages** — returns & refunds, privacy, terms. Needed before
-  taking real money and reassures buyers.
-- **About the maker + contact route** — a short "meet the maker" section and a
-  customer contact link. Needs content from the owner (her words + a shop email;
-  photo optional). Parked from the 2026-06-27 award pass — the two biggest
-  remaining trust gaps for a handmade shop.
-- **Legal / policy pages** — returns & refunds, privacy, terms. Needed before
-  taking real money and reassures buyers.
-- **About the maker + contact route** — a short "meet the maker" section and a
-  customer contact link. Needs content from the owner (her words + a shop email;
-  photo optional). Parked from the 2026-06-27 award pass — the two biggest
-  remaining trust gaps for a handmade shop.
-- **Supabase Pro** — upgrade so the project never auto-pauses; then **remove the
-  keep-alive cron** (`app/api/keep-alive/route.ts` + the `vercel.json` cron).
-- **Analytics** — Vercel Web Analytics + Speed Insights.
-- **Social share image** — an OG image once real product photos exist.
-- **Final QA** — a real end-to-end test purchase in Stripe **live** mode (then
-  refunded), full mobile pass across shop → cart → checkout → email.
-- **Go live** — switch Stripe to live keys + add the production webhook endpoint,
-  then share the link / start promoting.
+- ✅ **Custom domain** — `blgcreations.co.uk` (apex) on Vercel; `www`→apex redirect.
+- ✅ **Verified email sender** — `orders@blgcreations.co.uk` verified in Resend (branded, with logo).
+- ✅ **Legal / policy pages** — Returns, Privacy, Terms, Contact + Jewellery Care, with a footer nav (business-name framing; England & Wales; not VAT-registered).
+- ✅ **Pre-launch DB wipe + live flip** — test data cleared + counter reset, Stripe switched to live keys + a live webhook endpoint, redeployed.
+- ✅ **Final QA** — real end-to-end purchase (paid → sold-out → both emails) then refunded; mobile pass.
+- ✅ **Go live** — live and promoted; first sales in.
+
+_Not done (optional, non-blocking):_ **About / meet-the-maker** page; **Supabase Pro** (keep-alive cron still runs); **Vercel Web Analytics + Speed Insights** (code wired, dashboard toggle off); higher-res product photos.
+
+## Post-launch — shipped after go-live (2026-08-17)
+
+- ✅ **Order-confirmation email redesign** — branded letterhead layout + a **jewellery-care section** with Bev's Instagram QR.
+- ✅ **Return / refund sync** — a `charge.refunded` webhook marks orders **Refunded** (amount + date) with an admin badge + per-item **Relist** button (migration `0011`). To be validated on the first real return.
+- ✅ **Cart quantity = 1** — one-of-a-kind items are capped at 1 across cart, add button ("In your basket"), drawer, and server (guards against oversell/overcharge).
 
 ---
 
