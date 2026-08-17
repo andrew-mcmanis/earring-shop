@@ -27,6 +27,8 @@ interface OrderRow {
   payment_status?: string | null;
   stripe_payment_intent?: string | null;
   paid_at?: string | null;
+  refunded_amount?: number | string | null;
+  refunded_at?: string | null;
   created_at: string;
   order_items: OrderItemRow[];
 }
@@ -50,6 +52,8 @@ function mapOrder(r: OrderRow): Order {
     paymentStatus: (r.payment_status as PaymentStatus | null) ?? 'unpaid',
     stripePaymentIntent: r.stripe_payment_intent ?? null,
     paidAt: r.paid_at ?? null,
+    refundedAmount: r.refunded_amount == null ? null : Number(r.refunded_amount),
+    refundedAt: r.refunded_at ?? null,
     createdAt: r.created_at,
     items: (r.order_items ?? []).map((i) => ({
       id: i.id,

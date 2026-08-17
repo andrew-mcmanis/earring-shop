@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { AdminHeader } from '../AdminHeader';
 import { adminGetOrders } from './queries';
 import { OrderStatusControl } from './OrderStatusControl';
+import { RelistButton } from './RelistButton';
 import type { OrderStatus, PaymentStatus } from '../../data/types';
 
 export const metadata = { title: 'Orders · Admin' };
@@ -71,12 +72,22 @@ export default async function AdminOrdersPage() {
                     <div className="flex items-center gap-2 flex-wrap justify-end">
                       {(() => {
                         const p = PAYMENT_STYLES[o.paymentStatus] ?? PAYMENT_STYLES.unpaid;
+                        let label: string = p.label;
+                        if (o.paymentStatus === 'refunded' && o.refundedAmount != null) {
+                          // Compare in integer pence — summing pounds as floats can
+                          // round just above the exact total and mislabel an exact
+                          // full refund as "Partially refunded".
+                          const refundedPence = Math.round(o.refundedAmount * 100);
+                          const totalPence = Math.round((o.subtotal + o.shipping) * 100);
+                          const full = refundedPence >= totalPence;
+                          label = `${full ? 'Refunded' : 'Partially refunded'} £${o.refundedAmount.toFixed(2)}`;
+                        }
                         return (
                           <span
                             className={`inline-flex items-center gap-1.5 font-body text-xs font-medium px-2.5 py-1 rounded border ${p.chip}`}
                           >
                             <span className={`h-1.5 w-1.5 rounded-full ${p.dot}`} aria-hidden="true" />
-                            {p.label}
+                            {label}
                           </span>
                         );
                       })()}
@@ -89,6 +100,12 @@ export default async function AdminOrdersPage() {
                     </div>
                   </div>
 
+                  {o.paymentStatus === 'refunded' && o.refundedAt && (
+                    <p className="font-body text-xs text-ink-light mt-2">
+                      Refunded {formatDate(o.refundedAt)}
+                    </p>
+                  )}
+
                   {/* Items */}
                   <ul className="mt-4 flex flex-col gap-1.5 border-t border-cream-dark pt-3">
                     {o.items.map((item) => (
@@ -96,8 +113,13 @@ export default async function AdminOrdersPage() {
                         <span className="text-ink">
                           <span className="text-ink-light tabular-nums">{item.quantity}×</span> {item.name}
                         </span>
-                        <span className="text-ink tabular-nums">
-                          £{(item.unitPrice * item.quantity).toFixed(2)}
+                        <span className="inline-flex items-center gap-3">
+                          {o.paymentStatus === 'refunded' && item.productId && (
+                            <RelistButton productId={item.productId} />
+                          )}
+                          <span className="text-ink tabular-nums">
+                            £{(item.unitPrice * item.quantity).toFixed(2)}
+                          </span>
                         </span>
                       </li>
                     ))}

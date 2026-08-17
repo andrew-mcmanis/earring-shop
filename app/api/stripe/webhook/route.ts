@@ -72,6 +72,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge;
+    const paymentIntentId =
+      typeof charge.payment_intent === 'string'
+        ? charge.payment_intent
+        : (charge.payment_intent?.id ?? null);
+    if (!paymentIntentId) {
+      console.error('[stripe] charge.refunded without a payment_intent:', charge.id);
+      return NextResponse.json({ received: true });
+    }
+    try {
+      await recordRefund(paymentIntentId, charge.amount_refunded);
+    } catch (err) {
+      // Failing to RECORD the refund → 500 so Stripe retries the event.
+      console.error('[stripe] failed to record refund for PI', paymentIntentId, err);
+      return new NextResponse('Processing error', { status: 500 });
+    }
+    return NextResponse.json({ received: true });
+  }
+
   return NextResponse.json({ received: true });
 }
 
@@ -139,4 +159,47 @@ async function buildEmailData(svc: SupabaseClient, order: PaidOrderRow): Promise
     address: isPickup ? null : { line: order.address, city: order.city, postcode: order.postcode },
     collection,
   };
+}
+
+// Record a refund synced from Stripe. Idempotent + race-safe: an unknown
+// PaymentIntent is logged and no-op'd (per spec); the `refunded_at` stamp keeps
+// the first-refund time; the amount advances monotonically so an out-of-order or
+// retried older event can't regress a larger recorded amount. We do NOT restock
+// the piece (owner relists by hand) and send no email.
+async function recordRefund(paymentIntentId: string, amountRefundedPence: number): Promise<void> {
+  const svc = createServiceClient();
+  const refundedAmount = amountRefundedPence / 100; // Stripe pence → pounds
+
+  // Confirm the order exists first, so an unrecognized charge (foreign/stale PI)
+  // is logged rather than silently dropped by the keyed updates below.
+  const { data: order, error: findError } = await svc
+    .from('orders')
+    .select('id')
+    .eq('stripe_payment_intent', paymentIntentId)
+    .maybeSingle();
+  if (findError) throw findError;
+  if (!order) {
+    console.warn('[stripe] charge.refunded for a PaymentIntent with no matching order:', paymentIntentId);
+    return;
+  }
+
+  // First refund only: stamp the time. `.is('refunded_at', null)` makes a
+  // redelivery or a later partial refund leave the original timestamp intact.
+  const { error: stampError } = await svc
+    .from('orders')
+    .update({ refunded_at: new Date().toISOString() })
+    .eq('id', order.id)
+    .is('refunded_at', null);
+  if (stampError) throw stampError;
+
+  // Every refund event: set status + the current cumulative amount, but only
+  // ever ADVANCE the amount. `amount_refunded` is cumulative and Stripe doesn't
+  // guarantee ordering, so the `.or(...)` guard stops an out-of-order or retried
+  // older event from regressing a larger recorded amount.
+  const { error: writeError } = await svc
+    .from('orders')
+    .update({ payment_status: 'refunded', refunded_amount: refundedAmount })
+    .eq('id', order.id)
+    .or(`refunded_amount.is.null,refunded_amount.lte.${refundedAmount.toFixed(2)}`);
+  if (writeError) throw writeError;
 }
