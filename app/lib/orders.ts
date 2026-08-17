@@ -104,11 +104,11 @@ export async function createOrderAndIntent(
     const pronoun = names.length > 1 ? 'them' : 'it';
     return {
       status: 'error',
-      message: `Sorry, ${names.join(', ')} just sold out — please remove ${pronoun} from your cart to continue.`,
+      message: `Sorry, ${names.join(', ')} just sold out — please remove ${pronoun} from your basket to continue.`,
     };
   }
   if (items.length === 0) {
-    return { status: 'error', message: 'Your cart is empty — add an item before checking out.' };
+    return { status: 'error', message: 'Your basket is empty — add an item before checking out.' };
   }
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);

@@ -63,10 +63,10 @@ export function AddToCartButton({ product, size = 'sm', className = '' }: AddToC
           image: product.image,
         })
       }
-      aria-label={`Add ${product.name} to cart`}
+      aria-label={`Add ${product.name} to basket`}
       className={`cursor-pointer inline-flex items-center justify-center gap-1.5 font-body font-medium rounded bg-kraft text-cream hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 ${sizing} ${className}`}
     >
-      Add to Cart
+      Add to Basket
     </button>
   );
 }
