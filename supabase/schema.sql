@@ -112,6 +112,8 @@ create table if not exists orders (
                  check (payment_status in ('unpaid', 'paid', 'refunded')),
   stripe_payment_intent text,
   paid_at        timestamptz,
+  refunded_amount numeric(10,2),
+  refunded_at    timestamptz,
   created_at     timestamptz not null default now(),
   -- A delivery order must carry an address (pickup orders store null).
   check (fulfilment_method = 'pickup' or address is not null)
