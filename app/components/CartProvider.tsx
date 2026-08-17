@@ -32,10 +32,11 @@ type Action =
   | { type: 'remove'; id: string }
   | { type: 'clear' };
 
-// Sanity ceiling, not a stock rule — no real order needs more, and it bounds
-// what a stored cart can claim. Enforced in the reducer so every caller
-// (steppers, add, hydration) inherits it.
-const MAX_QTY = 99;
+// Every product is one-of-a-kind — a single unit — so a cart line is always
+// quantity 1. Enforced in the reducer so every path inherits it: re-adding an
+// item already in the cart is a no-op, and a stale stored cart with an inflated
+// quantity is clamped back to 1 on hydration.
+const MAX_QTY = 1;
 
 function reducer(state: CartItem[], action: Action): CartItem[] {
   switch (action.type) {

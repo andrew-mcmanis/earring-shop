@@ -90,7 +90,10 @@ export async function createOrderAndIntent(
       soldOutNames.push(product.name);
       continue;
     }
-    items.push({ productId: product.id, name: product.name, unitPrice: product.price, quantity });
+    // One-of-a-kind: never trust the client quantity — each product is a single
+    // unit, so the order line is always quantity 1 (guards a tampered cart from
+    // overselling/overcharging).
+    items.push({ productId: product.id, name: product.name, unitPrice: product.price, quantity: 1 });
   }
 
   if (Object.keys(fieldErrors).length > 0) {

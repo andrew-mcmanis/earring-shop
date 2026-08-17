@@ -11,7 +11,6 @@ export function CartDrawer() {
     items,
     isOpen,
     closeCart,
-    setQty,
     removeItem,
     clear,
     totalCount,
@@ -126,34 +125,9 @@ export function CartDrawer() {
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2">
-                    {/* Quantity stepper */}
-                    <div className="inline-flex items-center border border-kraft-light rounded">
-                      <button
-                        onClick={() => setQty(item.id, item.qty - 1)}
-                        aria-label={`Decrease quantity of ${item.name}`}
-                        className="cursor-pointer w-10 h-10 flex items-center justify-center text-ink hover:bg-cream-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft rounded-l"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                          <path strokeLinecap="round" d="M5 12h14" />
-                        </svg>
-                      </button>
-                      <span className="w-10 text-center font-body text-sm font-medium text-ink tabular-nums" aria-live="polite">
-                        {item.qty}
-                      </span>
-                      <button
-                        onClick={() => setQty(item.id, item.qty + 1)}
-                        aria-label={`Increase quantity of ${item.name}`}
-                        className="cursor-pointer w-10 h-10 flex items-center justify-center text-ink hover:bg-cream-dark transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-kraft rounded-r"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                          <path strokeLinecap="round" d="M12 5v14M5 12h14" />
-                        </svg>
-                      </button>
-                    </div>
-
+                  <div className="flex items-center justify-end mt-2">
                     <span className="font-body text-sm font-semibold text-ink tabular-nums">
-                      £{(item.price * item.qty).toFixed(2)}
+                      £{item.price.toFixed(2)}
                     </span>
                   </div>
 
