@@ -54,7 +54,7 @@ export function CartDrawer() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Shopping cart"
+        aria-label="Shopping basket"
         className={`absolute right-0 top-0 h-full w-full max-w-md bg-cream shadow-xl flex flex-col transition-transform duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
@@ -62,12 +62,12 @@ export function CartDrawer() {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-cream-dark flex-shrink-0">
           <h2 className="font-heading text-3xl font-bold text-ink">
-            Your Cart{totalCount > 0 ? ` (${totalCount})` : ''}
+            Your Basket{totalCount > 0 ? ` (${totalCount})` : ''}
           </h2>
           <button
             ref={closeBtnRef}
             onClick={closeCart}
-            aria-label="Close cart"
+            aria-label="Close basket"
             className="cursor-pointer text-ink hover:text-kraft transition-colors duration-200 p-2 rounded hover:bg-cream-dark focus:outline-none focus:ring-2 focus:ring-kraft"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -80,7 +80,7 @@ export function CartDrawer() {
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 px-6">
             <ProductIcon color="#D4B896" className="w-14 h-20" />
-            <p className="font-heading text-3xl font-bold text-kraft-light">Your cart is empty</p>
+            <p className="font-heading text-3xl font-bold text-kraft-light">Your basket is empty</p>
             <p className="font-body text-sm text-ink-light max-w-xs">
               Browse the collection and add something you love — it&apos;ll show up here.
             </p>
@@ -116,7 +116,7 @@ export function CartDrawer() {
                     </h3>
                     <button
                       onClick={() => removeItem(item.id)}
-                      aria-label={`Remove ${item.name} from cart`}
+                      aria-label={`Remove ${item.name} from basket`}
                       className="cursor-pointer text-ink-light hover:text-kraft transition-colors duration-150 w-11 h-11 -m-3 flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-kraft flex-shrink-0"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
@@ -176,7 +176,7 @@ export function CartDrawer() {
               onClick={clear}
               className="cursor-pointer font-body text-xs text-ink-light hover:text-kraft underline underline-offset-2 transition-colors duration-150 self-center py-1.5"
             >
-              Clear cart
+              Clear basket
             </button>
           </div>
         )}

@@ -111,7 +111,7 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
     return (
       <div className="flex flex-col items-center text-center gap-3 py-20">
         <ProductIcon color="#D4B896" className="w-14 h-20" />
-        <h2 className="font-heading text-3xl font-bold text-kraft-light">Your cart is empty</h2>
+        <h2 className="font-heading text-3xl font-bold text-kraft-light">Your basket is empty</h2>
         <p className="font-body text-sm text-ink-light max-w-xs">
           Add something you love, then come back to check out.
         </p>
