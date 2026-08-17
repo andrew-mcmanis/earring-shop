@@ -54,6 +54,10 @@ export interface Order {
   stripePaymentIntent: string | null;
   /** ISO timestamp set when the payment webhook marked the order paid. */
   paidAt: string | null;
+  /** Cumulative amount refunded (pounds); null until a refund syncs in. */
+  refundedAmount: number | null;
+  /** ISO timestamp of the first refund; null until then. */
+  refundedAt: string | null;
   createdAt: string;
   items: OrderItem[];
 }
