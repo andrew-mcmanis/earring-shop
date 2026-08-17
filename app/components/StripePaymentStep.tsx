@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { loadStripe, type Appearance } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useCart } from './CartProvider';
+import { OrderAgreement } from './OrderAgreement';
 
 // loadStripe once at module scope (idempotent). Gated on the key: calling
 // loadStripe('') throws an uncaught IntegrationError, and this module is
@@ -116,6 +117,7 @@ function PaymentForm({ reference, method, collection, onEdit }: Props) {
       <p className="font-body text-xs text-ink-light">
         Payments are processed securely by Stripe. Your card details never touch our servers.
       </p>
+      <OrderAgreement />
     </form>
   );
 }

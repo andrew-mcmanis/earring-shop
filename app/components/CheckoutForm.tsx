@@ -8,6 +8,7 @@ import { ProductIcon } from './ProductIcon';
 import { ProductImage } from './ProductImage';
 import { createOrderAndIntent, type PlaceOrderState } from '../lib/orders';
 import { StripePaymentStep } from './StripePaymentStep';
+import { OrderAgreement } from './OrderAgreement';
 import { computeShipping } from '../lib/shipping';
 
 const initialState: PlaceOrderState = { status: 'idle' };
@@ -232,6 +233,7 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
             ? "You'll pay securely by card on the next step."
             : "We'll email you to confirm payment and delivery."}
         </p>
+        <OrderAgreement />
       </form>
 
         {inPayment && state.clientSecret && (
