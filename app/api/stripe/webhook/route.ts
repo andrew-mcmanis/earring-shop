@@ -178,11 +178,15 @@ async function recordRefund(paymentIntentId: string, amountRefundedPence: number
     .is('refunded_at', null);
   if (stampError) throw stampError;
 
-  // Every refund event: set status + the current cumulative amount. Leaves the
-  // fulfilment `status` (New/Made/Posted) untouched.
+  // Every refund event: set status + the current cumulative amount, but only
+  // ever ADVANCE the amount. Stripe doesn't guarantee event ordering and
+  // `amount_refunded` is cumulative, so the `.or(...)` guard stops an
+  // out-of-order or retried older event from regressing a larger recorded
+  // amount (a redelivery of the same amount still re-writes harmlessly).
   const { error: writeError } = await svc
     .from('orders')
     .update({ payment_status: 'refunded', refunded_amount: refundedAmount })
-    .eq('stripe_payment_intent', paymentIntentId);
+    .eq('stripe_payment_intent', paymentIntentId)
+    .or(`refunded_amount.is.null,refunded_amount.lte.${refundedAmount.toFixed(2)}`);
   if (writeError) throw writeError;
 }
