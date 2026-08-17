@@ -12,15 +12,12 @@ export function RelistButton({ productId }: { productId: string }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (done) {
-    return <span className="font-body text-xs text-green-700">&#10003; Relisted</span>;
-  }
-
   return (
     <span className="inline-flex flex-col items-end gap-0.5">
       <button
         type="button"
         disabled={isPending}
+        aria-live="polite"
         onClick={() =>
           startTransition(async () => {
             setError(null);
@@ -29,9 +26,13 @@ export function RelistButton({ productId }: { productId: string }) {
             else setDone(true);
           })
         }
-        className="cursor-pointer font-body text-xs font-medium text-kraft-dark hover:text-kraft underline underline-offset-2 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft rounded"
+        className={
+          done
+            ? 'font-body text-xs font-medium text-green-700'
+            : 'cursor-pointer font-body text-xs font-medium text-kraft-dark hover:text-kraft underline underline-offset-2 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft rounded'
+        }
       >
-        Relist
+        {done ? '✓ Relisted' : 'Relist'}
       </button>
       {error && (
         <span role="alert" className="font-body text-xs text-red-600">

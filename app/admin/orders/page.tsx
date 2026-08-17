@@ -74,7 +74,12 @@ export default async function AdminOrdersPage() {
                         const p = PAYMENT_STYLES[o.paymentStatus] ?? PAYMENT_STYLES.unpaid;
                         let label: string = p.label;
                         if (o.paymentStatus === 'refunded' && o.refundedAmount != null) {
-                          const full = o.refundedAmount >= o.subtotal + o.shipping;
+                          // Compare in integer pence — summing pounds as floats can
+                          // round just above the exact total and mislabel an exact
+                          // full refund as "Partially refunded".
+                          const refundedPence = Math.round(o.refundedAmount * 100);
+                          const totalPence = Math.round((o.subtotal + o.shipping) * 100);
+                          const full = refundedPence >= totalPence;
                           label = `${full ? 'Refunded' : 'Partially refunded'} £${o.refundedAmount.toFixed(2)}`;
                         }
                         return (
