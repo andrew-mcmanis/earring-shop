@@ -72,6 +72,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
+  if (event.type === 'charge.refunded') {
+    const charge = event.data.object as Stripe.Charge;
+    const paymentIntentId =
+      typeof charge.payment_intent === 'string'
+        ? charge.payment_intent
+        : (charge.payment_intent?.id ?? null);
+    if (!paymentIntentId) {
+      console.error('[stripe] charge.refunded without a payment_intent:', charge.id);
+      return NextResponse.json({ received: true });
+    }
+    try {
+      await recordRefund(paymentIntentId, charge.amount_refunded);
+    } catch (err) {
+      // Failing to RECORD the refund → 500 so Stripe retries the event.
+      console.error('[stripe] failed to record refund for PI', paymentIntentId, err);
+      return new NextResponse('Processing error', { status: 500 });
+    }
+    return NextResponse.json({ received: true });
+  }
+
   return NextResponse.json({ received: true });
 }
 
@@ -139,4 +159,30 @@ async function buildEmailData(svc: SupabaseClient, order: PaidOrderRow): Promise
     address: isPickup ? null : { line: order.address, city: order.city, postcode: order.postcode },
     collection,
   };
+}
+
+// Record a refund synced from Stripe. Idempotent: the two updates are safe to
+// re-run (redelivered events) and correctly advance the total for a follow-up
+// partial refund. We do NOT restock the piece (owner relists by hand) and send
+// no email. Order looked up by the PaymentIntent id stored when it was paid.
+async function recordRefund(paymentIntentId: string, amountRefundedPence: number): Promise<void> {
+  const svc = createServiceClient();
+  const refundedAmount = amountRefundedPence / 100; // Stripe pence → pounds
+
+  // First refund only: stamp the time. `.is('refunded_at', null)` makes a
+  // redelivery or a later partial refund leave the original timestamp intact.
+  const { error: stampError } = await svc
+    .from('orders')
+    .update({ refunded_at: new Date().toISOString() })
+    .eq('stripe_payment_intent', paymentIntentId)
+    .is('refunded_at', null);
+  if (stampError) throw stampError;
+
+  // Every refund event: set status + the current cumulative amount. Leaves the
+  // fulfilment `status` (New/Made/Posted) untouched.
+  const { error: writeError } = await svc
+    .from('orders')
+    .update({ payment_status: 'refunded', refunded_amount: refundedAmount })
+    .eq('stripe_payment_intent', paymentIntentId);
+  if (writeError) throw writeError;
 }
