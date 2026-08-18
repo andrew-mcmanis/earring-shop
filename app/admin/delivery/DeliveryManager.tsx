@@ -20,7 +20,12 @@ function DeliveryBaseCard({ base, disabled }: { base: number; disabled: boolean 
   // so a stale value can't silently overwrite a newer one on Save.
   const serverValue = base.toFixed(2);
   const valueRef = useRef(value);
-  valueRef.current = value;
+  // Track the latest typed value in a ref, updated after render (not during) so
+  // the re-sync effect can read it without depending on `value` — which would
+  // make it re-run on every keystroke.
+  useEffect(() => {
+    valueRef.current = value;
+  });
   const prevServer = useRef(serverValue);
   useEffect(() => {
     if (prevServer.current === serverValue) return;
