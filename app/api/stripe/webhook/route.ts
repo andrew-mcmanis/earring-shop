@@ -25,6 +25,7 @@ interface PaidOrderRow {
   address: string | null;
   city: string | null;
   postcode: string | null;
+  notes: string | null;
   subtotal: number | string;
   shipping: number | string;
   fulfilment_method: string;
@@ -158,6 +159,7 @@ async function buildEmailData(svc: SupabaseClient, order: PaidOrderRow): Promise
     fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     address: isPickup ? null : { line: order.address, city: order.city, postcode: order.postcode },
     collection,
+    notes: order.notes,
   };
 }
 
