@@ -6,6 +6,7 @@ import { loadStripe, type Appearance } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { useCart } from './CartProvider';
 import { OrderAgreement } from './OrderAgreement';
+import { CancelOrder } from './CancelOrder';
 
 // loadStripe once at module scope (idempotent). Gated on the key: calling
 // loadStripe('') throws an uncaught IntegrationError, and this module is
@@ -97,7 +98,7 @@ function PaymentForm({ reference, method, collection, onEdit }: Props) {
         <PaymentElement />
       </fieldset>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"
           disabled={!stripe || submitting}
@@ -113,6 +114,7 @@ function PaymentForm({ reference, method, collection, onEdit }: Props) {
         >
           ← Edit details
         </button>
+        <CancelOrder disabled={submitting} />
       </div>
       <p className="font-body text-xs text-ink-light">
         Payments are processed securely by Stripe. Your card details never touch our servers.

@@ -9,6 +9,7 @@ import { ProductImage } from './ProductImage';
 import { createOrderAndIntent, type PlaceOrderState } from '../lib/orders';
 import { StripePaymentStep } from './StripePaymentStep';
 import { OrderAgreement } from './OrderAgreement';
+import { CancelOrder } from './CancelOrder';
 import { computeShipping } from '../lib/shipping';
 
 const initialState: PlaceOrderState = { status: 'idle' };
@@ -215,19 +216,22 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
           </div>
         </fieldset>
 
-        <button
-          type="submit"
-          disabled={isPending || hasUnavailable}
-          className="bg-kraft text-cream font-body text-sm font-semibold px-6 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed self-start"
-        >
-          {isPending
-            ? 'Placing order…'
-            : hasUnavailable
-              ? 'Remove sold-out items to continue'
-              : paymentEnabled
-                ? 'Continue to payment'
-                : 'Place order'}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="submit"
+            disabled={isPending || hasUnavailable}
+            className="bg-kraft text-cream font-body text-sm font-semibold px-6 py-3 rounded hover:bg-kraft-dark transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-kraft focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isPending
+              ? 'Placing order…'
+              : hasUnavailable
+                ? 'Remove sold-out items to continue'
+                : paymentEnabled
+                  ? 'Continue to payment'
+                  : 'Place order'}
+          </button>
+          <CancelOrder disabled={isPending} />
+        </div>
         <p className="font-body text-xs text-ink-light">
           {paymentEnabled
             ? "You'll pay securely by card on the next step."
