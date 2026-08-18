@@ -15,6 +15,9 @@ export interface OrderEmailData {
   address: { line: string | null; city: string | null; postcode: string | null } | null;
   /** Pickup orders only — read from private settings at send time. */
   collection: { address: string | null; note: string | null } | null;
+  /** Customer's order notes, if any — shown to the owner so a delivery/gift
+   *  instruction isn't missed. */
+  notes: string | null;
 }
 
 // Palette (brand tokens). Warm cream "paper", ink text, kraft accents.
@@ -187,11 +190,17 @@ function ownerHtml(data: OrderEmailData): string {
   ]
     .filter(Boolean)
     .join('<br>');
+  const notesBlock = data.notes
+    ? `${label('Notes')}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};white-space:pre-line;">${esc(data.notes)}</p>`
+    : '';
   const inner = [
     `${label('Customer')}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.7;color:${BODY};">${contact}</p>`,
     `${label('Order ' + data.reference)}${itemsTable(data)}`,
     fulfilmentBlock(data),
-  ].join(gap());
+    notesBlock,
+  ]
+    .filter(Boolean)
+    .join(gap());
   return shell(
     `New order ${data.reference} — ${money(data.subtotal + data.shipping)}`,
     `New order &mdash; ${esc(data.reference)}`,
