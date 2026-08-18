@@ -48,8 +48,11 @@ export function ProductPhotos({ initialUrls, onChange }: ProductPhotosProps) {
 
   // Keep the latest items in a ref so the unmount cleanup can revoke object URLs
   // for files added after mount (the cleanup effect below has empty deps).
+  // Written in an effect (after commit), not during render.
   const itemsRef = useRef(items);
-  itemsRef.current = items;
+  useEffect(() => {
+    itemsRef.current = items;
+  });
 
   // Revoke object URLs when the component unmounts.
   useEffect(() => {
