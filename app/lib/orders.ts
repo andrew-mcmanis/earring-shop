@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import type { Product } from '../data/types';
 import { getProducts, mapProduct, type ProductRow } from '../data/products';
 import { sampleDeliveryBase } from '../data/sample';
@@ -30,15 +31,66 @@ interface OrderLine {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Checkout throttle: at most this many order-creation attempts per IP per
+// window. Generous — a customer retrying a fumbled payment submits a handful at
+// most — but it stops rapid-fire abuse, since each attempt writes an order row
+// and creates a Stripe PaymentIntent.
+const CHECKOUT_RATE_LIMIT = 10;
+const CHECKOUT_RATE_WINDOW_S = 300; // 5 minutes
+
 function str(formData: FormData, key: string): string {
   const v = formData.get(key);
   return typeof v === 'string' ? v.trim() : '';
+}
+
+// Best client IP from the proxy headers Vercel sets. Null when unknown (then we
+// simply don't throttle — never block a real customer over a missing header).
+async function getClientIp(): Promise<string | null> {
+  const h = await headers();
+  const fwd = h.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0]?.trim() || null;
+  return h.get('x-real-ip');
+}
+
+/**
+ * Durable, per-IP checkout throttle. Returns true when the request is over the
+ * limit and should be blocked. Fail-open by design: a missing IP, an unconfigured
+ * service role, or any limiter error (including the 0012 migration not yet run)
+ * returns false so a real customer is never blocked over infrastructure.
+ */
+async function isRateLimited(): Promise<boolean> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return false;
+  const ip = await getClientIp();
+  if (!ip) return false;
+  try {
+    const { data: allowed, error } = await createServiceClient().rpc('check_rate_limit', {
+      p_key: `checkout:${ip}`,
+      p_limit: CHECKOUT_RATE_LIMIT,
+      p_window_seconds: CHECKOUT_RATE_WINDOW_S,
+    });
+    if (error) {
+      console.error('[order] rate-limit check failed (allowing):', error.message);
+      return false;
+    }
+    return allowed === false;
+  } catch (e) {
+    console.error('[order] rate-limit check threw (allowing):', e);
+    return false;
+  }
 }
 
 export async function createOrderAndIntent(
   _prev: PlaceOrderState,
   formData: FormData,
 ): Promise<PlaceOrderState> {
+  // Throttle before any DB write or Stripe call.
+  if (await isRateLimited()) {
+    return {
+      status: 'error',
+      message: 'Too many checkout attempts in a short time — please wait a minute and try again.',
+    };
+  }
+
   const name = str(formData, 'name');
   const email = str(formData, 'email');
   const phone = str(formData, 'phone');
