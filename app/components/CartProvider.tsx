@@ -133,6 +133,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore malformed or unavailable storage.
     }
+    // One-shot mount flag; localStorage isn't readable during SSR render, so this
+    // hydration setState is the correct pattern, not the anti-pattern the rule
+    // targets.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHydrated(true);
   }, []);
 
@@ -182,6 +186,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // can retry on the next cart open.
   useEffect(() => {
     if (!isOpen) return;
+    // Side-effecting re-check when the cart opens (refreshAvailability updates
+    // availability state) — a legitimate effect, not the cascading-render
+    // anti-pattern the rule targets.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshAvailability();
     if (deliveryBaseFetched.current === 'idle') {
       deliveryBaseFetched.current = 'pending';

@@ -63,6 +63,14 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
   const router = useRouter();
   const [state, formAction, isPending] = useActionState(createOrderAndIntent, initialState);
   const [editing, setEditing] = useState(false);
+  // Leave edit mode whenever a fresh client secret arrives (after an
+  // edit+resubmit). Adjusting state during render off a changed value is React's
+  // recommended alternative to a setState-in-effect for this case.
+  const [secretShown, setSecretShown] = useState(state.clientSecret);
+  if (state.clientSecret !== secretShown) {
+    setSecretShown(state.clientSecret);
+    if (state.clientSecret) setEditing(false);
+  }
   const inPayment = Boolean(state.clientSecret) && !editing;
   const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
 
@@ -86,11 +94,6 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
     const q = state.reference ? `?ref=${encodeURIComponent(state.reference)}` : '';
     router.push(`/checkout/success${q}`);
   }, [state, method, clear, router]);
-
-  // When a fresh client secret arrives after an edit+resubmit, leave edit mode.
-  useEffect(() => {
-    if (state.clientSecret) setEditing(false);
-  }, [state.clientSecret]);
 
   // Re-check availability when the checkout loads and whenever the cart changes.
   useEffect(() => {

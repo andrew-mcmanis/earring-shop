@@ -103,7 +103,6 @@ export function ShopContent({ products, categories, subcategories, colours }: Sh
       revealObserver.current = null;
       pendingCards.current.clear();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cards filtered out before they ever revealed unmount without unobserve —
