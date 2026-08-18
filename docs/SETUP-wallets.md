@@ -48,6 +48,57 @@ see Part 6.
 
 ---
 
+## What Stripe charges
+
+Enabling wallets costs nothing extra: **Apple Pay, Google Pay and Link are priced
+identically to cards** — the fee is set by the underlying card, and the wallet/Link adds no
+surcharge. So this whole feature changed our costs by £0.
+
+### Rates (UK, GBP)
+
+| Card type | Fee per transaction |
+| --- | --- |
+| **Standard UK card** (the overwhelming majority for us) | **1.5% + 20p** |
+| Premium UK card (rewards / commercial) | 2.8% + 20p |
+| EEA card | 2.5% + 20p |
+| International card | 3.15% + 20p |
+| Currency conversion | +2% — **does not apply to us** (we price and settle in GBP, so nothing converts) |
+
+For a UK handmade shop, essentially every payment lands on **1.5% + 20p**.
+
+### Worked examples (standard UK card, 1.5% + 20p)
+
+| Order total | Stripe fee | You keep | Effective rate |
+| --- | --- | --- | --- |
+| £5.00 | £0.28 | £4.72 | 5.5% |
+| £6.50 | £0.30 | £6.20 | 4.6% |
+| £9.50 | £0.34 | £9.16 | 3.6% |
+| £12.50 | £0.38 | £12.12 | 3.0% |
+| £20.00 | £0.50 | £19.50 | 2.5% |
+| £30.00 | £0.65 | £29.35 | 2.2% |
+
+**The flat 20p dominates at our price points**, so the *effective* rate is ~3–5%, not 1.5%.
+Rough rule of thumb: **~30–40p per typical order**. Bigger baskets dilute the 20p — a quiet
+argument for the delivery charge and for multi-item orders.
+
+### Two things that cost more than the headline rate
+
+- **Refunds don't return the fee.** Refund a £9.50 order and the customer gets £9.50 back,
+  but Stripe keeps the original ~34p — a refunded sale is a small net loss, not break-even.
+- **Disputes cost £20 each**, regardless of order value or who's right. Rare for tracked
+  handmade goods, but one chargeback on a £9.50 item wipes out ~30 orders' margin — a reason
+  to keep delivery tracked and item descriptions accurate.
+
+### No hidden costs
+
+No setup fee, no monthly fee, no card-storage fee. Standard GBP payouts to the bank are
+**free** (only *Instant* payouts cost 1%, min 40p — we don't use those).
+
+> Rates verified against Stripe's UK pricing page on **2026-08-18**. Stripe can change
+> pricing — re-check <https://stripe.com/gb/pricing> if in doubt.
+
+---
+
 ## Part 2 — Dashboard setup (LIVE account)
 
 > Do this on the **live** Stripe account (the one with `sk_live_` / `pk_live_` keys).
@@ -215,3 +266,4 @@ If we ever want it, start with a proper design pass, not this runbook.
 - Stripe — Register domains for payment methods: <https://docs.stripe.com/payments/payment-methods/pmd-registration>
 - Stripe — Payment Element (`wallets` default "show when possible"): <https://docs.stripe.com/payments/payment-element>
 - Stripe — Test wallets: <https://docs.stripe.com/testing/wallets>
+- Stripe — UK pricing (fees): <https://stripe.com/gb/pricing>
