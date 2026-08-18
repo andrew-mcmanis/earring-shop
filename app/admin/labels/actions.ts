@@ -29,7 +29,6 @@ async function uniqueSlug(
 ): Promise<string> {
   let slug = base;
   let n = 2;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { data } = await supabase.from(table).select('slug').eq('slug', slug).maybeSingle();
     if (!data) return slug;

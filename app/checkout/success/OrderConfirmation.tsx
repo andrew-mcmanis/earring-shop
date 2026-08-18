@@ -14,6 +14,11 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
   const [checked, setChecked] = useState(false);
   const [redirectStatus, setRedirectStatus] = useState<string | null>(null);
 
+  // One-shot mount read of the URL + sessionStorage, both client-only. Server
+  // and first client render show nothing, then this fills them in — the SSR-safe
+  // pattern, not the cascading-render anti-pattern the rule targets (reading
+  // sessionStorage during render would cause a hydration mismatch).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -33,6 +38,7 @@ export function OrderConfirmation({ fallbackRef }: { fallbackRef?: string }) {
     }
     setChecked(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const matchedOrder =
     order && (order.reference ?? null) === (fallbackRef ?? null) ? order : null;
