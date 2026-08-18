@@ -183,7 +183,13 @@ export async function createOrderAndIntent(
         quantity: l.quantity,
       })),
     );
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      // Roll back the just-created order so a failed items insert never leaves an
+      // itemless orphan row. Best-effort: the delete returns (not throws) on
+      // error, and we throw the original itemsError to the honest-failure catch.
+      await supabase.from('orders').delete().eq('id', order.id);
+      throw itemsError;
+    }
 
     const reference = `BLG-${order.order_number}`;
 
@@ -251,10 +257,18 @@ export async function createOrderAndIntent(
       fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     };
   } catch (err) {
-    console.error('[order] FAILED to save — order logged for manual entry:', err, {
+    // A database write failed (order/items insert, or a settings read). No
+    // payment has been taken — the Payment Element is only revealed on a
+    // successful save — so fail honestly rather than falsely confirming an order
+    // that was never recorded. The customer can safely retry; nothing was charged.
+    console.error('[order] FAILED to save — no order recorded:', err, {
       name, email, phone, address, city, postcode, notes, items, subtotal, shipping,
       fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
     });
-    return { status: 'success', fulfilmentMethod: isPickup ? 'pickup' : 'delivery' };
+    return {
+      status: 'error',
+      message:
+        'Sorry, something went wrong saving your order — please try again in a moment. You have not been charged.',
+    };
   }
 }
