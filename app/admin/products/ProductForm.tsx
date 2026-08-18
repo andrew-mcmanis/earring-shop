@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useCallback, useRef, useState } from 'react';
+import { startTransition, useActionState, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Category, Subcategory, Colour, Product } from '../../data/types';
 import { PRODUCT_IMAGE_BUCKET } from '../../data/types';
@@ -102,7 +102,14 @@ export function ProductForm({
     }
 
     fd.set('image_order', JSON.stringify(order));
-    formAction(fd);
+    // The useActionState dispatch must run inside a transition. In the photo path
+    // above it's called after awaiting the uploads — i.e. outside React's event
+    // scope — so without this the action's redirect and revalidated data never
+    // apply to the router: the row saves, but the screen keeps the old values and
+    // the next navigation crashes to the error page until a manual reload.
+    startTransition(() => {
+      formAction(fd);
+    });
   }
 
   const showSubcategory = category === 'earrings';
