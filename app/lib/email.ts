@@ -11,6 +11,10 @@ export interface OrderEmailData {
   subtotal: number;
   shipping: number;
   fulfilmentMethod: 'delivery' | 'pickup';
+  /** True when the order is a gift posted to someone other than the buyer. */
+  isGift: boolean;
+  /** Gift orders: who the parcel is addressed to. Null otherwise. */
+  recipientName: string | null;
   /** Delivery orders only. */
   address: { line: string | null; city: string | null; postcode: string | null } | null;
   /** Pickup orders only — read from private settings at send time. */
@@ -84,7 +88,7 @@ function itemsTable(data: OrderEmailData): string {
     </table>`;
 }
 
-function fulfilmentBlock(data: OrderEmailData): string {
+function fulfilmentBlock(data: OrderEmailData, audience: 'customer' | 'owner'): string {
   if (data.fulfilmentMethod === 'pickup') {
     const body = data.collection?.address
       ? `<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};white-space:pre-line;">${esc(data.collection.address)}</p>`
@@ -98,6 +102,15 @@ function fulfilmentBlock(data: OrderEmailData): string {
     .filter(Boolean)
     .map((s) => esc(String(s)))
     .join('<br>');
+  if (data.isGift) {
+    // Owner sees a clear GIFT marker (so she addresses the parcel to the
+    // recipient); the buyer sees a reassuring "Sending to".
+    const heading = audience === 'owner' ? 'Deliver to (gift)' : 'Sending to';
+    const name = data.recipientName
+      ? `<p style="margin:0 0 4px;font-family:${SERIF};font-size:15px;font-weight:bold;line-height:1.6;color:${INK};">${esc(data.recipientName)}</p>`
+      : '';
+    return `${label(heading)}${name}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};">${line}</p>`;
+  }
   return `${label('Delivery to')}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${INK};">${line}</p>`;
 }
 
@@ -170,7 +183,7 @@ function customerHtml(data: OrderEmailData): string {
   const first = esc(data.customerName.split(' ')[0] || data.customerName);
   const inner = [
     `${label('Order ' + data.reference)}${itemsTable(data)}`,
-    fulfilmentBlock(data),
+    fulfilmentBlock(data, 'customer'),
     careBlock(),
     followBlock(),
   ].join(gap());
@@ -196,7 +209,7 @@ function ownerHtml(data: OrderEmailData): string {
   const inner = [
     `${label('Customer')}<p style="margin:0;font-family:${SERIF};font-size:15px;line-height:1.7;color:${BODY};">${contact}</p>`,
     `${label('Order ' + data.reference)}${itemsTable(data)}`,
-    fulfilmentBlock(data),
+    fulfilmentBlock(data, 'owner'),
     notesBlock,
   ]
     .filter(Boolean)
