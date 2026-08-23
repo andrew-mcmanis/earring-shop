@@ -213,3 +213,29 @@ end;
 $$;
 grant all on rate_limits to service_role;
 grant execute on function check_rate_limit(text, int, int) to service_role;
+
+-- ============================================================
+-- Customer reviews. Public reads only approved rows (RLS); the owner moderates;
+-- submissions are inserted via the service role as approved=false.
+-- ============================================================
+create table if not exists reviews (
+  id              uuid primary key default gen_random_uuid(),
+  rating          int  not null check (rating between 1 and 5),
+  body            text not null,
+  reviewer_name   text not null,
+  order_reference text,
+  product_name    text,
+  approved        boolean not null default false,
+  created_at      timestamptz not null default now()
+);
+create index if not exists reviews_approved_idx on reviews(approved);
+create index if not exists reviews_created_idx  on reviews(created_at desc);
+
+alter table reviews enable row level security;
+create policy "public read approved reviews" on reviews for select using (approved = true);
+create policy "admin read reviews"           on reviews for select using (auth.role() = 'authenticated');
+create policy "admin update reviews"         on reviews for update using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+create policy "admin delete reviews"         on reviews for delete using (auth.role() = 'authenticated');
+grant select on reviews to anon, authenticated;
+grant update, delete on reviews to authenticated;
+grant all on reviews to service_role;

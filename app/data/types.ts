@@ -66,6 +66,20 @@ export interface Order {
   items: OrderItem[];
 }
 
+export interface Review {
+  id: string;
+  /** 1–5. */
+  rating: number;
+  body: string;
+  reviewerName: string;
+  /** Order reference the review came from (e.g. "BLG-123"); null if none. */
+  orderReference: string | null;
+  /** Optional snapshot of the item bought; unused in v1 submission. */
+  productName: string | null;
+  approved: boolean;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;
