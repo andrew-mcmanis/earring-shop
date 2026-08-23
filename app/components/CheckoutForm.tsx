@@ -73,6 +73,7 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
   }
   const inPayment = Boolean(state.clientSecret) && !editing;
   const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const [isGift, setIsGift] = useState(false);
 
   // Fallback success (no Stripe): behave like before — store + redirect.
   useEffect(() => {
@@ -139,6 +140,8 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
           value={JSON.stringify(items.map((i) => ({ id: i.id, qty: i.qty })))}
         />
         <input type="hidden" name="fulfilment_method" value={method} />
+        {/* Only a delivery order can be a gift; false otherwise so the server never stores stray recipient data. */}
+        <input type="hidden" name="is_gift" value={method === 'delivery' && isGift ? 'true' : 'false'} />
 
         {state.status === 'error' && state.message && (
           <div
@@ -193,10 +196,49 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
               nulls the address for pickup orders, so the hidden values are
               never stored. */}
           <div className={method === 'delivery' ? 'flex flex-col gap-4' : 'hidden'}>
-            <Field id="address" label="Address" required autoComplete="street-address" error={state.fieldErrors?.address} />
+            {/* Gift toggle — same capsule switch as FilterBar's "In stock only" */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isGift}
+              onClick={() => setIsGift((v) => !v)}
+              disabled={isPending}
+              className="group flex items-center gap-2.5 cursor-pointer focus:outline-none disabled:opacity-60 self-start"
+            >
+              <span
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full border transition-colors duration-150 group-focus-visible:ring-2 group-focus-visible:ring-kraft group-focus-visible:ring-offset-1 ${
+                  isGift ? 'bg-kraft border-kraft' : 'bg-cream border-kraft-light'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-150 ${
+                    isGift ? 'translate-x-[18px]' : 'translate-x-0.5'
+                  }`}
+                />
+              </span>
+              <span className="font-body text-sm text-ink">This is a gift — send it to someone else</span>
+            </button>
+
+            {isGift && (
+              <Field
+                id="recipient_name"
+                label="Recipient's name"
+                required
+                autoComplete="off"
+                error={state.fieldErrors?.recipient_name}
+              />
+            )}
+
+            <Field
+              id="address"
+              label={isGift ? "Recipient's address" : 'Address'}
+              required
+              autoComplete={isGift ? 'off' : 'street-address'}
+              error={state.fieldErrors?.address}
+            />
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field id="city" label="Town / City" autoComplete="address-level2" />
-              <Field id="postcode" label="Postcode" autoComplete="postal-code" />
+              <Field id="city" label="Town / City" autoComplete={isGift ? 'off' : 'address-level2'} />
+              <Field id="postcode" label="Postcode" autoComplete={isGift ? 'off' : 'postal-code'} />
             </div>
           </div>
           {method === 'pickup' && (
