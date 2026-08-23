@@ -99,6 +99,14 @@ export default async function AdminPage() {
             <h3 className="font-heading text-2xl font-bold text-ink">Delivery</h3>
             <p className="font-body text-sm text-ink-light mt-1">Set delivery price & collection.</p>
           </Link>
+
+          <Link
+            href="/admin/reviews"
+            className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+          >
+            <h3 className="font-heading text-2xl font-bold text-ink">Reviews</h3>
+            <p className="font-body text-sm text-ink-light mt-1">Approve customer reviews.</p>
+          </Link>
         </div>
 
         <section aria-label="Latest orders" className="flex flex-col gap-3">
