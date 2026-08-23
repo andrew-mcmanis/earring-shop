@@ -2,6 +2,8 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ShopContent } from './components/ShopContent';
 import { getProducts, getCategories, getSubcategories, getColours } from './data/products';
+import { getApprovedReviews } from './data/reviews';
+import { Testimonials } from './components/Testimonials';
 
 // Four-point twinkle, echoing the sparkle marks in the BLG Creations logo.
 function Sparkle({ className }: { className?: string }) {
@@ -13,11 +15,12 @@ function Sparkle({ className }: { className?: string }) {
 }
 
 export default async function Home() {
-  const [products, categories, subcategories, colours] = await Promise.all([
+  const [products, categories, subcategories, colours, reviews] = await Promise.all([
     getProducts(),
     getCategories(),
     getSubcategories(),
     getColours(),
+    getApprovedReviews(),
   ]);
 
   return (
@@ -46,6 +49,8 @@ export default async function Home() {
         subcategories={subcategories}
         colours={colours}
       />
+
+      <Testimonials reviews={reviews} />
 
       <Footer />
     </>
