@@ -99,12 +99,16 @@ export async function createOrderAndIntent(
   const postcode = str(formData, 'postcode');
   const notes = str(formData, 'notes');
   const isPickup = str(formData, 'fulfilment_method') === 'pickup';
+  const recipientName = str(formData, 'recipient_name');
+  // A gift is always a delivery — never honour it for pickup.
+  const isGift = !isPickup && formData.get('is_gift') === 'true';
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = 'Please enter your name.';
   if (!email) fieldErrors.email = 'Please enter your email.';
   else if (!EMAIL_RE.test(email)) fieldErrors.email = 'Please enter a valid email address.';
   if (!isPickup && !address) fieldErrors.address = 'Please enter a delivery address.';
+  if (isGift && !recipientName) fieldErrors.recipient_name = "Please enter the recipient's name.";
 
   // Rebuild the order from the authoritative catalogue — never trust
   // client-supplied names or prices.
@@ -216,6 +220,8 @@ export async function createOrderAndIntent(
         subtotal,
         shipping,
         fulfilment_method: isPickup ? 'pickup' : 'delivery',
+        is_gift: isGift,
+        recipient_name: isGift ? recipientName : null,
         status: 'new',
         // payment_status intentionally omitted — the column DEFAULTs to 'unpaid'.
         // This keeps the INSERT valid both before AND after migration 0010, so a
