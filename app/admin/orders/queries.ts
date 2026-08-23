@@ -18,11 +18,13 @@ interface OrderRow {
   address: string | null;
   city: string | null;
   postcode: string | null;
+  recipient_name?: string | null;
   country: string;
   notes: string | null;
   subtotal: number | string;
   shipping: number | string;
   fulfilment_method: string;
+  is_gift?: boolean;
   status: string;
   payment_status?: string | null;
   stripe_payment_intent?: string | null;
@@ -43,11 +45,13 @@ function mapOrder(r: OrderRow): Order {
     address: r.address,
     city: r.city,
     postcode: r.postcode,
+    recipientName: r.recipient_name ?? null,
     country: r.country,
     notes: r.notes,
     subtotal: Number(r.subtotal),
     shipping: Number(r.shipping ?? 0),
     fulfilmentMethod: r.fulfilment_method === 'pickup' ? 'pickup' : 'delivery',
+    isGift: r.is_gift ?? false,
     status: r.status as OrderStatus,
     paymentStatus: (r.payment_status as PaymentStatus | null) ?? 'unpaid',
     stripePaymentIntent: r.stripe_payment_intent ?? null,
