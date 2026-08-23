@@ -44,11 +44,15 @@ export interface Order {
   address: string | null;
   city: string | null;
   postcode: string | null;
+  /** Gift orders: who the parcel is addressed to. Null for non-gift orders. */
+  recipientName: string | null;
   country: string;
   notes: string | null;
   subtotal: number;
   shipping: number;
   fulfilmentMethod: 'delivery' | 'pickup';
+  /** True when the order is posted to someone other than the buyer. */
+  isGift: boolean;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   stripePaymentIntent: string | null;

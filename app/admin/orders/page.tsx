@@ -156,6 +156,9 @@ export default async function AdminOrdersPage() {
                       <p className="text-ink-light sm:col-span-2">Collection — no delivery address</p>
                     ) : (
                       <p className="text-ink-light sm:col-span-2">
+                        {o.isGift && (
+                          <span className="font-medium text-kraft-dark">Gift for {o.recipientName} — </span>
+                        )}
                         {[o.address, o.city, o.postcode, o.country].filter(Boolean).join(', ')}
                       </p>
                     )}

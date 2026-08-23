@@ -25,10 +25,12 @@ interface PaidOrderRow {
   address: string | null;
   city: string | null;
   postcode: string | null;
+  recipient_name: string | null;
   notes: string | null;
   subtotal: number | string;
   shipping: number | string;
   fulfilment_method: string;
+  is_gift: boolean;
   order_items: OrderItemRow[];
 }
 
@@ -157,6 +159,8 @@ async function buildEmailData(svc: SupabaseClient, order: PaidOrderRow): Promise
     subtotal: Number(order.subtotal),
     shipping: Number(order.shipping),
     fulfilmentMethod: isPickup ? 'pickup' : 'delivery',
+    isGift: order.is_gift,
+    recipientName: order.recipient_name,
     address: isPickup ? null : { line: order.address, city: order.city, postcode: order.postcode },
     collection,
     notes: order.notes,
