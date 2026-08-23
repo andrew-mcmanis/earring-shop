@@ -101,12 +101,14 @@ create table if not exists orders (
   address        text,                          -- null for pickup orders
   city           text,
   postcode       text,
+  recipient_name text,                          -- gift orders: who it's addressed to
   country        text not null default 'United Kingdom',
   notes          text,
   subtotal       numeric(10,2) not null default 0,
   shipping       numeric(10,2) not null default 0,
   fulfilment_method text not null default 'delivery'
                  check (fulfilment_method in ('delivery', 'pickup')),
+  is_gift        boolean not null default false, -- posted to someone other than the buyer
   status         text not null default 'new',  -- new | made | posted | cancelled
   payment_status text not null default 'unpaid'
                  check (payment_status in ('unpaid', 'paid', 'refunded')),
@@ -116,7 +118,9 @@ create table if not exists orders (
   refunded_at    timestamptz,
   created_at     timestamptz not null default now(),
   -- A delivery order must carry an address (pickup orders store null).
-  check (fulfilment_method = 'pickup' or address is not null)
+  check (fulfilment_method = 'pickup' or address is not null),
+  -- A gift is always a delivery with a named recipient + address.
+  check (is_gift = false or (fulfilment_method = 'delivery' and recipient_name is not null and address is not null))
 );
 
 create table if not exists order_items (
