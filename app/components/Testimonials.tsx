@@ -20,10 +20,21 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-export function Testimonials({ reviews }: { reviews: Review[] }) {
+export function Testimonials({
+  reviews,
+  total,
+  average,
+}: {
+  reviews: Review[];
+  total: number;
+  average: number;
+}) {
   if (reviews.length === 0) return null;
 
-  const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+  // Aggregate over ALL approved reviews; fall back to the displayed set if the
+  // stats query came back empty (ratings are 1–5, so a real average is never 0).
+  const count = total || reviews.length;
+  const avg = average || reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
 
   return (
     <section aria-label="Customer reviews" className="bg-cream-dark border-t border-kraft-light/50">
@@ -33,7 +44,7 @@ export function Testimonials({ reviews }: { reviews: Review[] }) {
           <p className="font-body text-sm text-ink-light inline-flex items-center gap-2">
             <Stars rating={Math.round(avg)} />
             <span className="tabular-nums">
-              {avg.toFixed(1)} from {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+              {avg.toFixed(1)} from {count} {count === 1 ? 'review' : 'reviews'}
             </span>
           </p>
         </div>

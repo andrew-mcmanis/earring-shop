@@ -50,3 +50,29 @@ export async function getApprovedReviews(limit = 12): Promise<Review[]> {
     return [];
   }
 }
+
+/**
+ * Count + average rating across ALL approved reviews (not just the displayed
+ * page), so the homepage aggregate stays accurate beyond the display limit.
+ * Returns { count: 0, average: 0 } on any failure or when there are none.
+ */
+export async function getApprovedReviewStats(): Promise<{ count: number; average: number }> {
+  if (!isSupabaseConfigured()) return { count: 0, average: 0 };
+  try {
+    const supabase = createReadClient();
+    const { data, count, error } = await supabase
+      .from('reviews')
+      .select('rating', { count: 'exact' })
+      .eq('approved', true);
+    if (error || !data || !count) {
+      if (error) console.warn('[data] review stats query failed:', error.message);
+      return { count: 0, average: 0 };
+    }
+    const rows = data as { rating: number }[];
+    const average = rows.reduce((sum, r) => sum + r.rating, 0) / rows.length;
+    return { count, average };
+  } catch (e) {
+    console.warn('[data] review stats query threw:', e);
+    return { count: 0, average: 0 };
+  }
+}
