@@ -3,6 +3,7 @@ import { AdminHeader } from '../AdminHeader';
 import { adminGetOrders } from './queries';
 import { OrderStatusControl } from './OrderStatusControl';
 import { RelistButton } from './RelistButton';
+import { ReviewRequestButton } from './ReviewRequestButton';
 import type { OrderStatus, PaymentStatus } from '../../data/types';
 
 export const metadata = { title: 'Orders · Admin' };
@@ -169,8 +170,13 @@ export default async function AdminOrdersPage() {
                     )}
                   </div>
 
-                  <div className="mt-4 border-t border-cream-dark pt-3 flex justify-end">
-                    <OrderStatusControl id={o.id} status={o.status} />
+                  <div className="mt-4 border-t border-cream-dark pt-3 flex flex-wrap items-center gap-3">
+                    {o.paymentStatus === 'paid' && o.status !== 'cancelled' && (
+                      <ReviewRequestButton orderId={o.id} sentAt={o.reviewInviteSentAt} />
+                    )}
+                    <div className="ml-auto">
+                      <OrderStatusControl id={o.id} status={o.status} />
+                    </div>
                   </div>
                 </li>
               );
