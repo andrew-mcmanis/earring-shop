@@ -2,55 +2,63 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Send the "leave a review" invite as a separate email ~5 days after an order is delivered (posted for delivery orders, paid for pickups) via a daily cron, and remove that invite from the order confirmation email.
+**Goal:** Send the "leave a review" invite as a separate email ~5 days after an order is paid (via a daily cron, new orders only), give the admin a manual "Send review request" button for any paid order (incl. the backlog), and remove the invite from the order confirmation email.
 
-**Architecture:** Two new timestamp columns on `orders` (`posted_at`, stamped when Bev marks an order Posted; `review_invite_sent_at`, stamped when the invite is sent). A new daily Vercel cron (`/api/review-invites`, same shape as the existing keep-alive cron) selects eligible orders, sends a dedicated review-request email, and stamps them so it never repeats. Both crons are aligned to `0 9 * * *`.
+**Architecture:** Two columns on `orders` — `review_invite_sent_at` (stamped when an email is actually sent, by cron or button) and `auto_review_invite` (whether the automatic job may email it; backfilled `false` for existing orders). A daily Vercel cron (`/api/review-invites`, like keep-alive) emails eligible new orders and stamps them; an admin button sends on demand. Both crons align to `0 9 * * *`.
 
-**Tech Stack:** Next.js 16 (App Router Route Handlers), TypeScript, Supabase (Postgres + service role), Resend (email), Vercel Cron. No test runner — verification is `npx tsc --noEmit` + `npm run build`, plus a manual cron hit in the final task.
+**Tech Stack:** Next.js 16 (App Router Route Handlers + Server Actions), React 19, TypeScript, Supabase (Postgres + service role), Resend, Vercel Cron. No test runner — verification is `npx tsc --noEmit` + `npm run build`, plus manual checks in the final task.
 
 ---
 
 ## Conventions for this plan (read first)
 
-- **No unit tests / no test runner** (project rule). Verify each task with `npx tsc --noEmit` and, where noted, `npm run build`. The cron's runtime behaviour is verified manually in the final task, not with a unit test.
+- **No unit tests / no test runner** (project rule). Verify each task with `npx tsc --noEmit` and, where noted, `npm run build`. Runtime behaviour is verified manually in the final task.
 - **Commits are LOCAL only.** Work is on branch `feat/delayed-review-email` (already checked out). **Do not push** — pushing `main` auto-deploys production. The owner pushes/merges after review.
 - Commit trailer on every commit: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
-- **Migration `0015` is an owner op** — run in the Supabase SQL editor before the cron relies on the new columns (Task 6). Because nothing existing references these columns and the cron degrades safely, a code-ahead-of-migration window is harmless (the stamp update and the cron query just no-op / error-and-skip), but apply it before trusting the feature.
-- Follow existing patterns exactly: the keep-alive route's `CRON_SECRET` guard, `sendOrderEmails`' Resend config guard, and the `email.ts` `shell()` composition.
+- **Migration `0015` is an owner op** (Task 6). It backfills `auto_review_invite=false` on existing orders, so the automatic job never touches the backlog.
+- Follow existing patterns: the keep-alive route's `CRON_SECRET` guard, `sendOrderEmails`' Resend guard, the `RelistButton` client-action pattern, and `updateOrderStatus`' auth check.
 
 ## File Structure
 
 | File | Change | Responsibility |
 |---|---|---|
-| `supabase/migrations/0015_review_invites.sql` | Create | Add `posted_at` + `review_invite_sent_at` to `orders` |
-| `supabase/schema.sql` | Modify | Mirror the two columns (repo convention) |
-| `app/admin/orders/actions.ts` | Modify | Stamp `posted_at` the first time an order is marked Posted |
-| `app/lib/email.ts` | Modify | New review-request email + sender; remove invite from the confirmation email |
-| `app/api/review-invites/route.ts` | Create | Daily cron: find eligible orders, send + stamp |
+| `supabase/migrations/0015_review_invites.sql` | Create | Add `review_invite_sent_at` + `auto_review_invite`; backfill backlog |
+| `supabase/schema.sql` | Modify | Mirror the two columns |
+| `app/data/types.ts` | Modify | `Order` gains `reviewInviteSentAt` |
+| `app/admin/orders/queries.ts` | Modify | Map `review_invite_sent_at` |
+| `app/lib/email.ts` | Modify | Review-request email + sender; remove invite from confirmation |
+| `app/api/review-invites/route.ts` | Create | Daily cron: eligible new orders → send + stamp |
+| `app/admin/orders/actions.ts` | Modify | `sendReviewInvite` server action |
+| `app/admin/orders/ReviewRequestButton.tsx` | Create | Client button (send / re-send, shows sent state) |
+| `app/admin/orders/page.tsx` | Modify | Render the button on paid, non-cancelled orders |
 | `vercel.json` | Modify | Align both crons to `0 9 * * *`; add the new one |
 
 ---
 
-## Task 1: Migration + schema mirror (data model)
+## Task 1: Migration + schema + `Order` type + query mapping
 
-SQL isn't type-checked; verify by review.
+Adding a required field to `Order` makes `tsc` fail until `mapOrder` sets it, so the type and its mapper change together. SQL isn't type-checked.
 
 **Files:**
 - Create: `supabase/migrations/0015_review_invites.sql`
-- Modify: `supabase/schema.sql`
+- Modify: `supabase/schema.sql`, `app/data/types.ts`, `app/admin/orders/queries.ts`
 
 - [ ] **Step 1: Create `supabase/migrations/0015_review_invites.sql`**
 
 ```sql
 -- 0015_review_invites.sql
--- Support the delayed "leave a review" email:
---   posted_at             — when the order was first marked posted (delivery timing)
---   review_invite_sent_at — when the review email was sent (prevents re-sending)
+-- Support the delayed + manual "leave a review" email:
+--   review_invite_sent_at — when a review email was actually sent (cron or button)
+--   auto_review_invite     — whether the automatic job may email this order
+-- Existing orders are handled manually (the button), so the automatic job skips
+-- them: backfill auto_review_invite=false. New orders default true.
 -- Run this once in the Supabase SQL editor.
 
 alter table orders
-  add column if not exists posted_at timestamptz,
-  add column if not exists review_invite_sent_at timestamptz;
+  add column if not exists review_invite_sent_at timestamptz,
+  add column if not exists auto_review_invite boolean not null default true;
+
+update orders set auto_review_invite = false;
 ```
 
 - [ ] **Step 2: Mirror the columns in `supabase/schema.sql`**
@@ -68,87 +76,91 @@ Replace with:
 ```sql
   refunded_amount numeric(10,2),
   refunded_at    timestamptz,
-  posted_at      timestamptz,                    -- set when the order is first marked posted
-  review_invite_sent_at timestamptz,             -- set when the delayed review email is sent
+  review_invite_sent_at timestamptz,             -- set when a review email is sent
+  auto_review_invite boolean not null default true, -- automatic job may email this order
   created_at     timestamptz not null default now(),
 ```
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Add `reviewInviteSentAt` to the `Order` interface in `app/data/types.ts`**
 
-```bash
-git add supabase/migrations/0015_review_invites.sql supabase/schema.sql
-git commit -m "Add migration 0015: posted_at + review_invite_sent_at
-
-Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
-```
-
----
-
-## Task 2: Stamp `posted_at` when an order is marked Posted
-
-`updateOrderStatus` sets the status but records no timestamp. Add a guarded stamp so `posted_at` is set the first time (and only the first time) status becomes `posted`.
-
-**Files:**
-- Modify: `app/admin/orders/actions.ts`
-
-- [ ] **Step 1: Add the `posted_at` stamp after the status update**
-
-In `app/admin/orders/actions.ts`, find:
+Find:
 
 ```ts
-  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
-  if (error) return { error: `Could not update: ${error.message}` };
-  revalidatePath('/admin/orders');
-  return {};
+  /** ISO timestamp of the first refund; null until then. */
+  refundedAt: string | null;
+  createdAt: string;
 ```
 
 Replace with:
 
 ```ts
-  const { error } = await supabase.from('orders').update({ status }).eq('id', id);
-  if (error) return { error: `Could not update: ${error.message}` };
-
-  // Stamp when the order was first marked posted — the delayed review email keys
-  // off this. Only set it while still null, so re-marking posted doesn't reset
-  // the 5-day clock.
-  if (status === 'posted') {
-    await supabase
-      .from('orders')
-      .update({ posted_at: new Date().toISOString() })
-      .eq('id', id)
-      .is('posted_at', null);
-  }
-
-  revalidatePath('/admin/orders');
-  return {};
+  /** ISO timestamp of the first refund; null until then. */
+  refundedAt: string | null;
+  /** When a review-request email was sent for this order; null if never. */
+  reviewInviteSentAt: string | null;
+  createdAt: string;
 ```
 
-- [ ] **Step 2: Type-check + build**
+- [ ] **Step 4: Add the column to `OrderRow` in `app/admin/orders/queries.ts`**
 
-Run: `npx tsc --noEmit && npm run build`
-Expected: both succeed.
+Find:
 
-- [ ] **Step 3: Commit**
+```ts
+  refunded_amount?: number | string | null;
+  refunded_at?: string | null;
+  created_at: string;
+```
+
+Replace with:
+
+```ts
+  refunded_amount?: number | string | null;
+  refunded_at?: string | null;
+  review_invite_sent_at?: string | null;
+  created_at: string;
+```
+
+- [ ] **Step 5: Map it in `mapOrder` (same file)**
+
+Find:
+
+```ts
+    refundedAt: r.refunded_at ?? null,
+    createdAt: r.created_at,
+```
+
+Replace with:
+
+```ts
+    refundedAt: r.refunded_at ?? null,
+    reviewInviteSentAt: r.review_invite_sent_at ?? null,
+    createdAt: r.created_at,
+```
+
+- [ ] **Step 6: Type-check**
+
+Run: `npx tsc --noEmit`
+Expected: no errors.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add app/admin/orders/actions.ts
-git commit -m "Stamp posted_at when an order is first marked posted
+git add supabase/migrations/0015_review_invites.sql supabase/schema.sql app/data/types.ts app/admin/orders/queries.ts
+git commit -m "Add migration 0015: review invite columns + Order.reviewInviteSentAt
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 3: Review-request email + move the invite out of the confirmation
-
-Adds a dedicated delayed email (reusing the shell + the existing `reviewInviteBlock`) and a sender that returns whether it actually sent, then removes the review button from the confirmation email.
+## Task 2: Review-request email + move the invite out of the confirmation
 
 **Files:**
 - Modify: `app/lib/email.ts`
 
 - [ ] **Step 1: Add `ReviewRequestData` + `reviewRequestHtml` + `sendReviewRequestEmail`**
 
-In `app/lib/email.ts`, find the end of `sendOrderEmails` and the file's final lines:
+In `app/lib/email.ts`, find the end of `sendOrderEmails`:
 
 ```ts
   } else {
@@ -179,10 +191,9 @@ function reviewRequestHtml(data: ReviewRequestData): string {
 }
 
 /**
- * Send the delayed "leave a review" email to the buyer. Returns true ONLY on a
- * successful send, so the cron stamps review_invite_sent_at only when the email
- * actually went out (missing config or a send error → false → retried next run).
- * Never throws into the cron.
+ * Send the "leave a review" email to the buyer. Returns true ONLY on a
+ * successful send, so callers (cron + admin button) stamp review_invite_sent_at
+ * only when the email actually went out. Never throws.
  */
 export async function sendReviewRequestEmail(data: ReviewRequestData): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -236,22 +247,20 @@ Replace with:
 - [ ] **Step 3: Type-check + build**
 
 Run: `npx tsc --noEmit && npm run build`
-Expected: both succeed. (`reviewInviteBlock` is still used — now by `reviewRequestHtml` — so no unused-symbol error. `shell`, `gap`, `followBlock`, `esc`, `Resend` are all already in scope.)
+Expected: both succeed. (`reviewInviteBlock` is still used — now by `reviewRequestHtml` — so no unused-symbol error.)
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add app/lib/email.ts
-git commit -m "Emails: delayed review-request email; drop invite from confirmation
+git commit -m "Emails: review-request email; drop invite from confirmation
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 4: The daily cron route
-
-Mirrors `app/api/keep-alive/route.ts`: a `GET` handler guarded by `CRON_SECRET`, using the service client. Selects eligible orders and sends + stamps each.
+## Task 3: The daily cron route
 
 **Files:**
 - Create: `app/api/review-invites/route.ts`
@@ -262,12 +271,11 @@ Mirrors `app/api/keep-alive/route.ts`: a `GET` handler guarded by `CRON_SECRET`,
 import { createServiceClient } from '../../lib/supabase';
 import { sendReviewRequestEmail } from '../../lib/email';
 
-// Signature verification / DB writes need Node; never cache.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Days after posting (delivery) / payment (pickup) before the review email is
-// sent. A once-daily cron, so it's "at least this many days".
+// Days after payment before the review email is sent. A once-daily cron, so it's
+// "at least this many days".
 const REVIEW_DELAY_DAYS = 5;
 
 interface EligibleOrder {
@@ -278,8 +286,8 @@ interface EligibleOrder {
 }
 
 // Sends the delayed review invite to orders that are due. Triggered daily by a
-// Vercel Cron (see vercel.json). Idempotent: only orders with a null
-// review_invite_sent_at are selected, and each is stamped once sent.
+// Vercel Cron (see vercel.json). New orders only (auto_review_invite), paid >= N
+// days ago, not cancelled/refunded, not already sent. Idempotent.
 export async function GET(request: Request): Promise<Response> {
   const secret = process.env.CRON_SECRET;
   if (secret && request.headers.get('authorization') !== `Bearer ${secret}`) {
@@ -292,17 +300,14 @@ export async function GET(request: Request): Promise<Response> {
   const svc = createServiceClient();
   const cutoff = new Date(Date.now() - REVIEW_DELAY_DAYS * 86_400_000).toISOString();
 
-  // Paid (excludes unpaid + refunded), never invited, and either a delivery
-  // order posted >= N days ago or a pickup order paid >= N days ago.
   const { data, error } = await svc
     .from('orders')
     .select('id, order_number, customer_name, customer_email')
-    .eq('payment_status', 'paid')
+    .eq('payment_status', 'paid')        // excludes unpaid + refunded
+    .eq('auto_review_invite', true)      // excludes the pre-launch backlog
     .is('review_invite_sent_at', null)
-    .or(
-      `and(fulfilment_method.eq.delivery,status.eq.posted,posted_at.lte.${cutoff}),` +
-        `and(fulfilment_method.eq.pickup,status.neq.cancelled,paid_at.lte.${cutoff})`,
-    )
+    .neq('status', 'cancelled')
+    .lte('paid_at', cutoff)
     .limit(50);
 
   if (error) {
@@ -321,16 +326,14 @@ export async function GET(request: Request): Promise<Response> {
       customerEmail: o.customer_email,
     });
     if (!ok) {
-      // Not sent (missing config or send error) — leave unstamped, retry next run.
       failed++;
-      continue;
+      continue; // leave unstamped — retry next run
     }
     const { error: stampError } = await svc
       .from('orders')
       .update({ review_invite_sent_at: new Date().toISOString() })
       .eq('id', o.id);
     if (stampError) {
-      // Sent but not stamped — will resend once next run. Log it.
       console.error('[review-invites] sent but failed to stamp', reference, stampError.message);
       failed++;
     } else {
@@ -345,13 +348,202 @@ export async function GET(request: Request): Promise<Response> {
 - [ ] **Step 2: Type-check + build**
 
 Run: `npx tsc --noEmit && npm run build`
-Expected: both succeed; `/api/review-invites` appears in the route list. (`createServiceClient` and `sendReviewRequestEmail` are the exports added/available in earlier tasks.)
+Expected: both succeed; `/api/review-invites` appears in the route list.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add app/api/review-invites/route.ts
-git commit -m "Add /api/review-invites daily cron (send + stamp)
+git commit -m "Add /api/review-invites daily cron (new orders, send + stamp)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
+```
+
+---
+
+## Task 4: Manual "Send review request" button
+
+**Files:**
+- Modify: `app/admin/orders/actions.ts`
+- Create: `app/admin/orders/ReviewRequestButton.tsx`
+- Modify: `app/admin/orders/page.tsx`
+
+- [ ] **Step 1: Import the email sender in `app/admin/orders/actions.ts`**
+
+Find:
+
+```ts
+import { createServerSupabase } from '../../lib/supabase-server';
+import type { OrderStatus } from '../../data/types';
+```
+
+Replace with:
+
+```ts
+import { createServerSupabase } from '../../lib/supabase-server';
+import { sendReviewRequestEmail } from '../../lib/email';
+import type { OrderStatus } from '../../data/types';
+```
+
+- [ ] **Step 2: Add the `sendReviewInvite` action at the end of `app/admin/orders/actions.ts`**
+
+Append to the file:
+
+```ts
+
+// Send a review-request email for one order on demand (admin button). Works on
+// any paid, non-cancelled order — including the pre-launch backlog. Stamps
+// review_invite_sent_at on success so the automatic job won't also send it.
+export async function sendReviewInvite(id: string): Promise<{ error?: string }> {
+  const supabase = await createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/admin/login');
+
+  const { data: order, error } = await supabase
+    .from('orders')
+    .select('order_number, customer_name, customer_email, payment_status, status')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !order) return { error: 'Could not load the order.' };
+  if (order.payment_status !== 'paid' || order.status === 'cancelled') {
+    return { error: 'Review requests are only for paid, active orders.' };
+  }
+
+  const ok = await sendReviewRequestEmail({
+    reference: `BLG-${order.order_number}`,
+    customerName: order.customer_name,
+    customerEmail: order.customer_email,
+  });
+  if (!ok) return { error: 'The email could not be sent — check the email settings and try again.' };
+
+  const { error: stampError } = await supabase
+    .from('orders')
+    .update({ review_invite_sent_at: new Date().toISOString() })
+    .eq('id', id);
+  if (stampError) return { error: `Sent, but failed to record it: ${stampError.message}` };
+
+  revalidatePath('/admin/orders');
+  return {};
+}
+```
+
+- [ ] **Step 3: Create `app/admin/orders/ReviewRequestButton.tsx`**
+
+```tsx
+'use client';
+
+import { useState, useTransition } from 'react';
+import { sendReviewInvite } from './actions';
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Request a review for one order on demand. Shows a send button until an invite
+// has gone out, then the sent date + a guarded "Send again".
+export function ReviewRequestButton({ orderId, sentAt }: { orderId: string; sentAt: string | null }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState<string | null>(sentAt);
+
+  function send(confirmFirst: boolean) {
+    if (confirmFirst && !confirm('A review request was already sent for this order. Send it again?')) return;
+    startTransition(async () => {
+      setError(null);
+      const res = await sendReviewInvite(orderId);
+      if (res?.error) setError(res.error);
+      else setSent(new Date().toISOString());
+    });
+  }
+
+  return (
+    <span className="inline-flex flex-col gap-0.5">
+      {sent ? (
+        <span className="inline-flex items-center gap-2 font-body text-xs text-ink-light">
+          <span className="text-green-700">&#10003; Review requested {formatDate(sent)}</span>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => send(true)}
+            className="cursor-pointer text-kraft-dark hover:text-kraft underline underline-offset-2 disabled:opacity-60"
+          >
+            {isPending ? 'Sending…' : 'Send again'}
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => send(false)}
+          className="cursor-pointer inline-flex items-center gap-1.5 font-body text-xs font-medium px-2.5 py-1 rounded border border-kraft-light text-ink-light hover:border-kraft transition-colors duration-150 disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
+        >
+          {isPending ? 'Sending…' : 'Send review request'}
+        </button>
+      )}
+      {error && (
+        <span role="alert" className="font-body text-xs text-red-600">
+          {error}
+        </span>
+      )}
+    </span>
+  );
+}
+```
+
+- [ ] **Step 4: Import the button in `app/admin/orders/page.tsx`**
+
+Find:
+
+```tsx
+import { OrderStatusControl } from './OrderStatusControl';
+import { RelistButton } from './RelistButton';
+import type { OrderStatus, PaymentStatus } from '../../data/types';
+```
+
+Replace with:
+
+```tsx
+import { OrderStatusControl } from './OrderStatusControl';
+import { RelistButton } from './RelistButton';
+import { ReviewRequestButton } from './ReviewRequestButton';
+import type { OrderStatus, PaymentStatus } from '../../data/types';
+```
+
+- [ ] **Step 5: Render the button in the order card's action row**
+
+In `app/admin/orders/page.tsx`, find:
+
+```tsx
+                  <div className="mt-4 border-t border-cream-dark pt-3 flex justify-end">
+                    <OrderStatusControl id={o.id} status={o.status} />
+                  </div>
+```
+
+Replace with:
+
+```tsx
+                  <div className="mt-4 border-t border-cream-dark pt-3 flex flex-wrap items-center gap-3">
+                    {o.paymentStatus === 'paid' && o.status !== 'cancelled' && (
+                      <ReviewRequestButton orderId={o.id} sentAt={o.reviewInviteSentAt} />
+                    )}
+                    <div className="ml-auto">
+                      <OrderStatusControl id={o.id} status={o.status} />
+                    </div>
+                  </div>
+```
+
+- [ ] **Step 6: Type-check + build**
+
+Run: `npx tsc --noEmit && npm run build`
+Expected: both succeed; `/admin/orders` still compiles.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app/admin/orders/actions.ts app/admin/orders/ReviewRequestButton.tsx app/admin/orders/page.tsx
+git commit -m "Admin orders: manual Send review request button
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
@@ -410,43 +602,33 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ## Task 6: Full verification + owner ops (deploy-time)
 
-No new code. Gates the feature and documents the owner steps.
+No new code.
 
 - [ ] **Step 1: Whole-branch checks**
 
 Run: `npx tsc --noEmit && npm run build`
-Expected: clean tsc; build succeeds; `/api/review-invites` present in the output.
+Expected: clean tsc; build succeeds; `/api/review-invites` present.
 
 - [ ] **Step 2: Owner op — apply the migration**
 
-In **Supabase → SQL Editor**, run the contents of `supabase/migrations/0015_review_invites.sql`:
-
-```sql
-alter table orders
-  add column if not exists posted_at timestamptz,
-  add column if not exists review_invite_sent_at timestamptz;
-```
+In **Supabase → SQL Editor**, run the contents of `supabase/migrations/0015_review_invites.sql` (adds the two columns and backfills `auto_review_invite=false` on existing orders).
 
 - [ ] **Step 3: Owner op — confirm the Vercel cron allowance**
 
-Confirm the project's Vercel plan permits **two** daily cron jobs. If it's capped, instead of the second cron, call the review-invite logic from within `/api/keep-alive` (both run daily at the same time) and drop the `/api/review-invites` entry from `vercel.json`.
+Confirm the plan permits **two** daily cron jobs. If capped, call the review-invite logic from inside `/api/keep-alive` and drop the `/api/review-invites` entry.
 
 - [ ] **Step 4: Manual end-to-end check**
 
-With the migration applied and the dev server running (`npm run dev`) — or against a preview deploy:
-- In Supabase, take a **paid, delivery** order, set its `status = 'posted'` and backdate `posted_at` to 6+ days ago (and ensure `review_invite_sent_at` is null).
-- `GET` the endpoint with the secret:
-  `curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/review-invites`
-  Expected JSON like `{ ok: true, considered: 1, sent: 1, failed: 0 }`; the buyer receives the review email; the order's `review_invite_sent_at` is now set.
-- Hit the endpoint **again** → `sent: 0` (no re-send).
-- Backdate a **paid pickup** order's `paid_at` similarly → it's picked up too.
-- Confirm a **refunded** or **cancelled** backdated order is **not** selected.
-- Send yourself a normal order confirmation (or inspect `customerHtml`) → the review button is **gone** from it.
+With the migration applied and the dev server running (`npm run dev`) — or a preview deploy:
+- **Admin button:** open `/admin/orders`, click **Send review request** on a paid order → the buyer gets the email, the button becomes **"✓ Review requested {date}"**. Confirm a cancelled/unpaid order shows **no** button.
+- **Cron (new order):** in Supabase, take a paid order, set `auto_review_invite = true`, `review_invite_sent_at = null`, and backdate `paid_at` to 6+ days ago. `curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/review-invites` → `{ ok:true, sent:1, ... }`, email arrives, `review_invite_sent_at` set. Hit again → `sent:0`.
+- **Backlog skipped:** confirm an order with `auto_review_invite = false` and a >5-day-old `paid_at` is **not** picked up by the cron.
+- **Confirmation email:** inspect `customerHtml` / a fresh order email → the review button is **gone**.
 
 - [ ] **Step 5: Report status (do NOT push)**
 
-Summarize tsc/build results and the manual check. The owner applies migration `0015`, confirms the cron allowance, then merges `feat/delayed-review-email` to `main` (which deploys) — after which both crons show at `0 9 * * *` in the Vercel dashboard.
+Summarize tsc/build + the manual checks. The owner applies migration `0015`, confirms the cron allowance, then merges `feat/delayed-review-email` to `main` (which deploys); both crons then show at `0 9 * * *` in the Vercel dashboard.
 
 ## Out of scope (from the spec)
 
-Real delivery tracking · per-hour precision · de-duping across a customer's multiple orders · reminder/second-nudge emails · an admin setting for the delay.
+Real delivery tracking · per-hour precision · reminder emails · de-duping across a customer's orders · an admin delay setting · re-send throttling beyond the confirm dialog.

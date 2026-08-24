@@ -5,168 +5,151 @@ _Date: 2026-08-24_
 ## Problem
 
 The customer-reviews feature put a "Leave a review" button in the **order
-confirmation email**, which is sent the moment payment succeeds — before the
-customer has received or worn the piece. A review request lands far better a few
-days *after* delivery. Bev asked for the invite to be sent automatically as a
-separate email a few days later.
+confirmation email**, sent the moment payment succeeds — before the customer has
+received the piece. A review request lands far better a few days after they have
+it. Bev asked for two things:
 
-The catch: the app has **no delivery signal** — there's no courier/tracking
-integration. The closest real signal is when Bev marks an order **Posted**. So
-"a few days after delivery" is implemented as "a few days after Posted" for
-delivery orders (and, since pickup orders never get a Posted event, "a few days
-after payment" for pickups).
+1. Send the invite **automatically** a few days after the order completes, as a
+   separate email.
+2. A **manual button** in the admin so she can request reviews from orders that
+   already completed (to get reviews off the existing backlog).
 
 ## Decisions (confirmed with the owner)
 
 - **Separate, delayed email — not the confirmation.** The review CTA is **removed
-  from the confirmation email** entirely and moved into the new delayed email, so
-  the ask happens once, well-timed.
-- **5-day delay.** Delivery: 5 days after `posted_at`. Pickup: 5 days after
-  `paid_at`. It's **"at least 5 days"** — a once-daily cron fires it on the first
-  run past the mark (so effectively 5–6 days), which is fine for this purpose.
-- **Cron-based, not Resend `scheduledAt`.** A daily job evaluates *current* order
-  state at send time, so a refund or cancellation in the interim naturally
-  suppresses the email — no scheduled-send cancellation logic. (Rejected: Resend
-  `scheduledAt` — would need cancel-on-refund handling and is bound by Resend's
-  scheduling window.)
-- **Both crons fire together at `0 9 * * *` (09:00 UTC ≈ 9–10am UK).** The
-  existing keep-alive cron moves from `0 6 * * *` to `0 9 * * *`; the new cron
-  runs at the same time. Vercel crons are UTC-only, so UK local time drifts an
-  hour across BST/GMT — harmless here.
-- **Both order types invited.** Delivery keyed off Posted, pickup off payment.
-- **One invite per order, never repeated** (a `review_invite_sent_at` stamp).
+  from the confirmation email** and moved into the new delayed email.
+- **Trigger: 5 days after the order is _paid_** (placed & paid). We drop the
+  earlier "posted" idea and its timestamp entirely. The pieces are one-of-a-kind
+  and **ready-made** (already made when bought — Bev just packs and posts), so
+  they ship within a day or two and "5 days after paid" lands around arrival.
+  Delivery and pickup are treated identically. It's **"at least 5 days"** — a
+  once-daily cron fires it on the first run past the mark.
+- **Cron-based**, not Resend `scheduledAt` — a daily job evaluates *current* state
+  at send time, so a refund/cancellation in between naturally suppresses it.
+- **Manual "Send review request" button** in Admin → Orders, on **paid,
+  non-cancelled** orders — Bev can request a review on demand, and re-send.
+- **Existing orders are manual-only.** The automatic job **ignores every order
+  that exists at launch** (no surprise blast to past customers); it applies only
+  to orders placed from launch onward. Bev uses the button for the backlog.
+- **Both crons fire at `0 9 * * *`** (09:00 UTC ≈ 9–10am UK). keep-alive moves
+  from `0 6 * * *` to `0 9 * * *`.
 
 ## Data model — migration `0015_review_invites.sql`
 
-_(Next free migration; highest existing is `0014`.)_
+_(Next free migration; highest existing is `0014`.)_ Two columns on `orders` —
+**no `posted_at`**:
 
 ```sql
 alter table orders
-  add column if not exists posted_at timestamptz,
-  add column if not exists review_invite_sent_at timestamptz;
+  add column if not exists review_invite_sent_at timestamptz,
+  add column if not exists auto_review_invite boolean not null default true;
+
+-- Existing orders are handled manually (the button), never by the automatic job.
+update orders set auto_review_invite = false;
 ```
 
-- `posted_at` — stamped the **first** time an order's status becomes `posted`
-  (status changes aren't timestamped today).
-- `review_invite_sent_at` — stamped by the cron when the invite is sent; the
-  `IS NULL` filter is what stops re-sends.
-- Mirror both in `supabase/schema.sql` (repo convention). **Owner runs `0015` by
-  hand in the Supabase SQL editor** before the cron relies on the columns.
-- No `Order` type / admin-query change needed — the cron reads the raw columns
-  via the service client, and `posted_at` is written by the status action (below).
+- **`review_invite_sent_at`** — set only when a review email is **actually sent**
+  (cron or button). Null = never sent. Drives the admin button's state, stops the
+  cron re-sending, and stops a duplicate manual send.
+- **`auto_review_invite`** — whether the automatic job may email this order. New
+  orders default `true`; the migration flips **all existing rows to `false`**.
 
-## Stamp `posted_at` — `app/admin/orders/actions.ts`
+**Why two columns:** `review_invite_sent_at` means "we emailed a review request"
+— it must *not* be set on the backlog, or the admin would wrongly show those
+orders as already-asked. `auto_review_invite` means "the automatic job may handle
+this" — `false` for the backlog. Keeping them separate lets the backlog show as
+un-asked in the admin (so the button works on it) while the cron still skips it.
 
-`updateOrderStatus` currently does `update({ status }).eq('id', id)`. Add: when
-the new status is `posted`, also stamp `posted_at = now()` **only if it's still
-null**, via a guarded follow-up update:
+Mirror both columns in `supabase/schema.sql`. **Owner runs `0015` by hand.**
+The `Order` type gains `reviewInviteSentAt` (for the button); `auto_review_invite`
+is cron-only (read as a raw column), not surfaced on the type.
 
-```ts
-if (status === 'posted') {
-  await supabase.from('orders')
-    .update({ posted_at: new Date().toISOString() })
-    .eq('id', id)
-    .is('posted_at', null);   // only the first time — re-marking doesn't reset the 5-day clock
-}
-```
+## Cron — `app/api/review-invites/route.ts` (new, daily)
 
-Uses the existing signed-in admin client; the `admin update orders` RLS policy
-already permits it.
+Mirrors `app/api/keep-alive/route.ts`: a `GET` handler, `runtime='nodejs'`,
+`dynamic='force-dynamic'`, guarded by the same `CRON_SECRET` bearer check, using
+the **service client**.
 
-## Cron route — `app/api/review-invites/route.ts`
-
-Mirrors `app/api/keep-alive/route.ts`: a `GET` handler, `runtime = 'nodejs'`,
-`dynamic = 'force-dynamic'`, guarded by the same `CRON_SECRET` bearer check
-(Vercel sends it automatically on cron invocations).
-
-- Uses the **service client** (bypasses RLS).
-- A single delay constant `REVIEW_DELAY_DAYS = 5`; compute
-  `cutoff = new Date(Date.now() - REVIEW_DELAY_DAYS * 86_400_000).toISOString()`.
+- Delay constant `REVIEW_DELAY_DAYS = 5`; `cutoff = now − 5 days`.
 - **Eligibility** (select `id, order_number, customer_name, customer_email`,
-  `.limit(50)` to bound a run — extras roll to the next day):
-  - `payment_status = 'paid'` (excludes unpaid + refunded)
-  - `review_invite_sent_at IS NULL`
-  - AND either:
-    - **delivery**: `fulfilment_method='delivery' AND status='posted' AND posted_at ≤ cutoff`, or
-    - **pickup**: `fulfilment_method='pickup' AND status<>'cancelled' AND paid_at ≤ cutoff`
-  - Implemented with PostgREST `.or('and(...),and(...)')` plus the `.eq`/`.is`
-    filters above.
-- **Per order:** call `sendReviewRequestEmail(...)`; **only if it returns `true`**
-  (a real send), stamp `review_invite_sent_at = now()` for that `id`. Each order
-  is independent (per-order try/catch) so one failure doesn't block the rest.
-- Returns JSON `{ ok, sent, failed }`.
-- **Idempotency:** the `IS NULL` filter + per-order stamp prevents re-sends across
-  runs. Send-then-stamp (gated on success) means a crash between a successful send
-  and its stamp would at worst resend once next day — acceptable for a review
-  nudge; a *missed* send (no stamp) simply retries next day.
+  `limit 50`): `payment_status='paid'` (excludes unpaid + refunded) AND
+  `auto_review_invite=true` (excludes the backlog) AND `review_invite_sent_at IS
+  NULL` AND `status<>'cancelled'` AND `paid_at ≤ cutoff`. (A plain filter chain —
+  no `.or()` needed now.)
+- **Per order:** `sendReviewRequestEmail(...)`; **only if it returns `true`**,
+  stamp `review_invite_sent_at = now()`. Each order independent; one failure
+  doesn't block the rest.
+- Returns JSON `{ ok, considered, sent, failed }`.
+- **Idempotency:** the `IS NULL` filter + per-order stamp prevents re-sends.
+
+## Manual send button — Admin → Orders
+
+- New client component **`ReviewRequestButton`** on each **paid, non-cancelled**
+  order, in the order card's bottom action row (beside the status control).
+  - `review_invite_sent_at` null → a **"Send review request"** button.
+  - already sent → **"✓ Review requested {date}"** plus a subtle **"Send again"**
+    (with a `confirm()`).
+- New server action **`sendReviewInvite(id)`** in `app/admin/orders/actions.ts`:
+  auth-gated (same pattern as `updateOrderStatus`), loads the order, guards
+  paid + not cancelled, calls `sendReviewRequestEmail`, stamps
+  `review_invite_sent_at` on success, `revalidatePath('/admin/orders')`, returns
+  `{ error? }`.
+- `Order` + `mapOrder` gain `reviewInviteSentAt` so the page can render the state.
 
 ## Email — `app/lib/email.ts`
 
-- **New `reviewRequestHtml(data)`** — reuses the existing `shell()`: greeting
-  `Hi {first}`, an intro hoping the order (by reference) has arrived and they're
-  enjoying it, and `inner = [reviewInviteBlock(reference), followBlock()]`.
-  `reviewInviteBlock` already exists (from the reviews feature) — **reused, not
-  duplicated**.
+- **New `reviewRequestHtml(data)`** — reuses the existing `shell()`: `Hi {first}`,
+  an intro hoping the order (by reference) has arrived, and
+  `inner = [reviewInviteBlock(reference), followBlock()]`. `reviewInviteBlock`
+  already exists (from the reviews feature) — **reused, not duplicated**.
 - **New `sendReviewRequestEmail({ reference, customerName, customerEmail }):
-  Promise<boolean>`** — mirrors `sendOrderEmails`' config guard
-  (`RESEND_API_KEY`/`RESEND_FROM`) and try/catch logging, but **returns `true`
-  only on a successful send** (so the cron stamps only when the email actually
-  went out; missing config or a send error returns `false` → retried next day).
-  Sends to the **buyer only**. Never throws into the cron.
+  Promise<boolean>`** — mirrors `sendOrderEmails`' config guard, but returns
+  `true` only on a successful send (so both the cron and the button stamp only
+  when the email actually went out). Buyer only. Never throws.
 - **Remove** `reviewInviteBlock(data.reference)` from `customerHtml`'s `inner`
   array — the confirmation email no longer carries the review button.
 
 ## `vercel.json`
 
-Two crons, both at `0 9 * * *`:
-
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "crons": [
-    { "path": "/api/keep-alive",     "schedule": "0 9 * * *" },
-    { "path": "/api/review-invites", "schedule": "0 9 * * *" }
-  ]
-}
-```
-
-**Owner note:** confirm the Vercel plan allows two daily cron jobs. If it's
-capped, the fallback is to call the review-invite logic from inside the existing
-keep-alive route instead of adding a second cron. `CRON_SECRET` (already set for
-keep-alive) also guards the new endpoint.
+Two crons, both `0 9 * * *`: `/api/keep-alive` (moved from `0 6`) and
+`/api/review-invites`. **Owner note:** confirm the Vercel plan allows two daily
+crons; if capped, call the review-invite logic from inside keep-alive instead.
+`CRON_SECRET` (already set) guards the new endpoint.
 
 ## Out of scope (deliberately)
 
-- Real delivery tracking (courier integration).
+- Real delivery tracking.
 - Per-hour precision (daily cron; "at least 5 days").
-- De-duping across a customer's multiple orders (each order is invited once).
 - Reminder / second-nudge emails.
-- An admin setting for the delay (it's a code constant).
+- De-duping across a customer's multiple orders.
+- An admin setting for the delay (code constant).
+- Throttling the manual "Send again" beyond a confirm dialog.
 
 ## Edge cases
 
-- **Refunded/cancelled before day 5:** excluded — `payment_status='paid'` drops
-  refunds; `status` conditions drop cancelled.
-- **Delivery order never marked Posted:** `posted_at` stays null → never invited
-  (correct: we don't know it shipped).
-- **Order re-marked Posted:** `posted_at` set only when null → the 5-day clock
-  isn't reset.
+- **Refunded/cancelled:** excluded — `payment_status='paid'` drops refunds; the
+  `status<>'cancelled'` filter drops cancellations (and the button hides on both).
+- **Existing/backlog orders:** `auto_review_invite=false` → never auto-emailed;
+  `review_invite_sent_at` stays null so the admin shows them un-asked and the
+  button works.
+- **Manual send on a new order:** stamps `review_invite_sent_at` → the cron won't
+  also send.
+- **Re-send via the button:** allowed behind a `confirm()`; re-stamps the date.
 - **Resend not configured / send fails:** `sendReviewRequestEmail` returns
-  `false` → not stamped → retried next day; the cron continues to the next order.
-- **Endpoint hit without `CRON_SECRET`:** if the env var is unset the route runs
-  (like keep-alive); the query only ever emails legitimately-eligible paid orders,
-  and each is stamped once. Setting `CRON_SECRET` locks it to the scheduler.
-- **Timezone:** `posted_at`/`paid_at` are `timestamptz`; the cutoff comparison is
-  UTC-correct.
+  `false` → not stamped → cron retries next run; the button shows an error.
+- **Cron auth:** unset `CRON_SECRET` leaves the route open (like keep-alive); it
+  only ever emails eligible non-backlog orders.
+- **Timezone:** `paid_at` is `timestamptz`; the cutoff comparison is UTC-correct.
 
 ## Verification
 
 - `tsc` clean; `npm run build` succeeds (no test runner — project convention).
-- **Manual/owner:** backdate a test order's `posted_at` (or `paid_at` for a
-  pickup) to >5 days ago in Supabase, then `GET /api/review-invites` with the
-  `Authorization: Bearer <CRON_SECRET>` header → confirm the review email arrives
-  and `review_invite_sent_at` is stamped; hit it again → **no** re-send. Confirm a
-  refunded/cancelled test order is skipped, and that the confirmation email no
-  longer shows the review button.
-- **Deploy:** run migration `0015`; confirm both crons appear in the Vercel
-  dashboard at `0 9 * * *`.
+- **Manual/owner:** with the migration applied, backdate a *new-style* order
+  (`auto_review_invite=true`) `paid_at` to >5 days ago, then `GET
+  /api/review-invites` with the `CRON_SECRET` bearer → email sent + stamped; hit
+  again → no re-send. Confirm a backlog order (`auto_review_invite=false`) is
+  **not** auto-emailed. In Admin → Orders, click **Send review request** on an
+  order → email sent, shows "Review requested". Confirm refunded/cancelled orders
+  show no button and aren't auto-sent, and that the confirmation email no longer
+  has the review button.
+- **Deploy:** run migration `0015`; confirm both crons show at `0 9 * * *`.
