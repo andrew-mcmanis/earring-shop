@@ -31,6 +31,7 @@ interface OrderRow {
   paid_at?: string | null;
   refunded_amount?: number | string | null;
   refunded_at?: string | null;
+  review_invite_sent_at?: string | null;
   created_at: string;
   order_items: OrderItemRow[];
 }
@@ -58,6 +59,7 @@ function mapOrder(r: OrderRow): Order {
     paidAt: r.paid_at ?? null,
     refundedAmount: r.refunded_amount == null ? null : Number(r.refunded_amount),
     refundedAt: r.refunded_at ?? null,
+    reviewInviteSentAt: r.review_invite_sent_at ?? null,
     createdAt: r.created_at,
     items: (r.order_items ?? []).map((i) => ({
       id: i.id,
