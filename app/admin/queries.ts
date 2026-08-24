@@ -16,6 +16,7 @@ export interface DashboardStats {
   newOrderCount: number | null;
   categoryCount: number | null;
   colourCount: number | null;
+  pendingReviewCount: number | null;
   latestOrders: DashboardOrder[];
 }
 
@@ -25,6 +26,7 @@ const EMPTY: DashboardStats = {
   newOrderCount: null,
   categoryCount: null,
   colourCount: null,
+  pendingReviewCount: null,
   latestOrders: [],
 };
 
@@ -35,12 +37,13 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   try {
     const supabase = await createServerSupabase();
     const head = { count: 'exact' as const, head: true };
-    const [products, soldOut, newOrders, categories, colours, latest] = await Promise.all([
+    const [products, soldOut, newOrders, categories, colours, pendingReviews, latest] = await Promise.all([
       supabase.from('products').select('*', head),
       supabase.from('products').select('*', head).eq('sold_out', true),
       supabase.from('orders').select('*', head).eq('status', 'new'),
       supabase.from('categories').select('*', head),
       supabase.from('colours').select('*', head),
+      supabase.from('reviews').select('*', head).eq('approved', false),
       supabase
         .from('orders')
         .select('id, order_number, customer_name, subtotal, shipping, status, created_at')
@@ -53,6 +56,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       newOrderCount: newOrders.count ?? null,
       categoryCount: categories.count ?? null,
       colourCount: colours.count ?? null,
+      pendingReviewCount: pendingReviews.count ?? null,
       latestOrders: (latest.data ?? []).map((o) => ({
         id: o.id,
         orderNumber: o.order_number,

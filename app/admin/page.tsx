@@ -105,7 +105,10 @@ export default async function AdminPage() {
             className="bg-white border border-cream-dark rounded-lg p-5 flex flex-col gap-1 hover:border-kraft hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-kraft"
           >
             <h3 className="font-heading text-2xl font-bold text-ink">Reviews</h3>
-            <p className="font-body text-sm text-ink-light mt-1">Approve customer reviews.</p>
+            <p className="font-body text-3xl font-semibold text-ink tabular-nums">{n(stats.pendingReviewCount)}</p>
+            <p className="font-body text-sm text-ink-light">
+              {stats.pendingReviewCount ? 'Awaiting approval' : 'None waiting'}
+            </p>
           </Link>
         </div>
 
