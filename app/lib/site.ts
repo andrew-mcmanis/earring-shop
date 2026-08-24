@@ -17,5 +17,5 @@ export const SITE_URL =
 export const ORDERS_EMAIL = 'orders@blgcreations.co.uk';
 
 /** Public Instagram profile + handle, shown on the content pages. */
-export const INSTAGRAM_URL = 'https://instagram.com/blg.creations';
-export const INSTAGRAM_HANDLE = '@BLG.Creations';
+export const INSTAGRAM_URL = 'https://instagram.com/beverleygallifant';
+export const INSTAGRAM_HANDLE = '@beverleygallifant';
