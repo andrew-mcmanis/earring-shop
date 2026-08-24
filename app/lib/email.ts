@@ -135,6 +135,16 @@ function careBlock(): string {
     </table>`;
 }
 
+function reviewInviteBlock(reference: string): string {
+  const url = `${SITE_URL}/reviews/new?ref=${encodeURIComponent(reference)}`;
+  return `
+    ${label('Enjoyed your order?')}
+    <p style="margin:0 0 14px;font-family:${SERIF};font-size:15px;line-height:1.6;color:${BODY};">A few words from you help other customers find us &mdash; and they always make our day. It only takes a minute.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${KRAFT}" style="border-radius:6px;">
+      <a href="${url}" style="display:inline-block;padding:11px 22px;font-family:${SERIF};font-size:14px;font-weight:bold;color:${CREAM};text-decoration:none;">Leave a review</a>
+    </td></tr></table>`;
+}
+
 function followBlock(): string {
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -185,6 +195,7 @@ function customerHtml(data: OrderEmailData): string {
     `${label('Order ' + data.reference)}${itemsTable(data)}`,
     fulfilmentBlock(data, 'customer'),
     careBlock(),
+    reviewInviteBlock(data.reference),
     followBlock(),
   ].join(gap());
   return shell(
