@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, createReadClient } from '../../lib/supabase';
+import { sendDueReviewInvites } from '../../lib/review-invites';
 
 // Keep the Supabase project active. Supabase's free tier pauses a project after
 // ~7 days without activity, which would knock the live shop back to placeholder
@@ -28,5 +29,14 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  return Response.json({ ok: true, pinged: true, at: new Date().toISOString() });
+  // The plan allows a single daily cron, so this same job also sends any due
+  // review invites. Best-effort: a failure here must not fail the keep-alive.
+  let reviewInvites;
+  try {
+    reviewInvites = await sendDueReviewInvites();
+  } catch (e) {
+    console.error('[keep-alive] review invites run threw:', e);
+  }
+
+  return Response.json({ ok: true, pinged: true, at: new Date().toISOString(), reviewInvites });
 }

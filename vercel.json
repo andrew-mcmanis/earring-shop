@@ -4,10 +4,6 @@
     {
       "path": "/api/keep-alive",
       "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/review-invites",
-      "schedule": "0 9 * * *"
     }
   ]
 }
