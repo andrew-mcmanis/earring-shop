@@ -54,7 +54,7 @@ export function ReviewForm({ orderReference }: { orderReference: string | null }
       <div className="flex flex-col items-center text-center gap-3 py-16">
         <h2 className="font-heading text-3xl font-bold text-ink">Thank you!</h2>
         <p className="font-body text-sm text-ink-light max-w-sm">
-          Your review has been received. We read every one — it&apos;ll appear on the site once approved.
+          Your review has been received — we really appreciate you taking the time to share it.
         </p>
         <Link
           href="/"
