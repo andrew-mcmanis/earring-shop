@@ -195,7 +195,6 @@ function customerHtml(data: OrderEmailData): string {
     `${label('Order ' + data.reference)}${itemsTable(data)}`,
     fulfilmentBlock(data, 'customer'),
     careBlock(),
-    reviewInviteBlock(data.reference),
     followBlock(),
   ].join(gap());
   return shell(
@@ -282,5 +281,50 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
     }
   } else {
     console.warn('[email] OWNER_ORDER_EMAIL not set — owner alert skipped for', data.reference);
+  }
+}
+
+export interface ReviewRequestData {
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+}
+
+function reviewRequestHtml(data: ReviewRequestData): string {
+  const first = esc(data.customerName.split(' ')[0] || data.customerName);
+  const inner = [reviewInviteBlock(data.reference), followBlock()].join(gap());
+  return shell(
+    'How are you enjoying your BLG Creations order?',
+    `Hi ${first}`,
+    `We hope your order (${esc(data.reference)}) arrived safely and you&rsquo;re loving it. If you have a moment, we&rsquo;d be so grateful for a quick review.`,
+    inner,
+  );
+}
+
+/**
+ * Send the "leave a review" email to the buyer. Returns true ONLY on a
+ * successful send, so callers (cron + admin button) stamp review_invite_sent_at
+ * only when the email actually went out. Never throws.
+ */
+export async function sendReviewRequestEmail(data: ReviewRequestData): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+  if (!apiKey || !from) {
+    console.warn('[email] RESEND_API_KEY/RESEND_FROM missing — skipping review email for', data.reference);
+    return false;
+  }
+  try {
+    // No explicit Reply-To (as with the order emails): a reply goes to the From
+    // address (orders@blgcreations.co.uk), the mailbox the owner reads.
+    await new Resend(apiKey).emails.send({
+      from,
+      to: data.customerEmail,
+      subject: 'How are you enjoying your BLG Creations order?',
+      html: reviewRequestHtml(data),
+    });
+    return true;
+  } catch (e) {
+    console.error('[email] review request failed for', data.reference, e);
+    return false;
   }
 }

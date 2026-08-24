@@ -116,6 +116,8 @@ create table if not exists orders (
   paid_at        timestamptz,
   refunded_amount numeric(10,2),
   refunded_at    timestamptz,
+  review_invite_sent_at timestamptz,             -- set when a review email is sent
+  auto_review_invite boolean not null default true, -- automatic job may email this order
   created_at     timestamptz not null default now(),
   -- A delivery order must carry an address (pickup orders store null).
   check (fulfilment_method = 'pickup' or address is not null),

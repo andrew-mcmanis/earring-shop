@@ -62,6 +62,8 @@ export interface Order {
   refundedAmount: number | null;
   /** ISO timestamp of the first refund; null until then. */
   refundedAt: string | null;
+  /** When a review-request email was sent for this order; null if never. */
+  reviewInviteSentAt: string | null;
   createdAt: string;
   items: OrderItem[];
 }
