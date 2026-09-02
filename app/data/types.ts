@@ -113,6 +113,12 @@ export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 /** Supabase Storage bucket holding product photos. */
 export const PRODUCT_IMAGE_BUCKET = 'product-images';
 
+/** Photos are downscaled in the browser to this longest edge before upload.
+ *  Comfortably covers the largest on-site use (the lightbox) while turning a
+ *  4-5 MB phone photo into a few hundred KB, so uploads over mobile data
+ *  aren't a slog. Never reduces the shortest side below MIN_PHOTO_DIMENSION. */
+export const MAX_UPLOAD_DIMENSION = 2000;
+
 /** Advisory minimum photo dimension (shortest side, px). Below this the admin
  *  gets a non-blocking "may look blurry" warning — the product detail view
  *  renders photos up to ~700px, so smaller sources get upscaled. */
