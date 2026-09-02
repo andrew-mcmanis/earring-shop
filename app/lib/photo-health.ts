@@ -21,6 +21,10 @@ import { SITE_URL } from './site';
 const SAMPLE_SIZE = 6;
 
 /** Delivery URLs a rendered page can legitimately reference. */
+/** This runs inside the daily cron, so every request is bounded — a hung
+ *  fetch must not stall the keep-alive behind it. */
+const TIMEOUT_MS = 8000;
+
 const IMAGE_URL_RE =
   /\/_next\/image\?url=[^"'\s,\\]+|https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/(?:object|render)\/[^"'\s,\\]+/gi;
 
@@ -49,6 +53,7 @@ async function checkOne(url: string): Promise<PhotoFailure | null> {
       // Ask as a browser would — delivery often content-negotiates on Accept.
       headers: { Accept: 'image/avif,image/webp,image/*,*/*' },
       cache: 'no-store',
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const type = res.headers.get('content-type') ?? '';
     // A 200 that isn't an image counts as a failure: that's exactly the shape
@@ -69,7 +74,7 @@ async function checkOne(url: string): Promise<PhotoFailure | null> {
 export async function checkProductPhotos(): Promise<PhotoHealth | null> {
   let html: string;
   try {
-    const res = await fetch(SITE_URL, { cache: 'no-store' });
+    const res = await fetch(SITE_URL, { cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return { checked: 0, failures: [{ url: SITE_URL, status: res.status }] };
     html = await res.text();
   } catch (e) {
