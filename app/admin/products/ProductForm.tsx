@@ -83,6 +83,10 @@ export function ProductForm({
             .from(PRODUCT_IMAGE_BUCKET)
             .uploadToSignedUrl(signed.path, signed.token, item.file, {
               contentType: item.file.type,
+              // Each upload gets a fresh UUID filename, so the bytes at a given
+              // URL never change — let Storage's CDN hold them for a year rather
+              // than re-fetching the original on every resize.
+              cacheControl: '31536000',
             });
           if (upErr) {
             setUploadError(`A photo failed to upload — please try again. (${upErr.message})`);
