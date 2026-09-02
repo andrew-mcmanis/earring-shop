@@ -6,6 +6,7 @@ import type { Category, Subcategory, Colour, Product } from '../../data/types';
 import { PRODUCT_IMAGE_BUCKET } from '../../data/types';
 import { createProductImageUploadUrl, type ProductFormState } from './actions';
 import { createBrowserSupabase } from '../../lib/supabase-browser';
+import { resizeForUpload } from '../../lib/resize-image';
 import { ProductPhotos } from './ProductPhotos';
 import type { PhotoItem } from './SortablePhoto';
 
@@ -72,7 +73,10 @@ export function ProductForm({
             continue;
           }
           if (!item.file) continue;
-          const ext = item.file.name.split('.').pop() ?? 'jpg';
+          // Downscale before uploading — phone originals run to ~4.5 MB, which
+          // the shop never serves anyway. Falls back to the original on failure.
+          const photo = await resizeForUpload(item.file);
+          const ext = photo.name.split('.').pop() ?? 'jpg';
           const signed = await createProductImageUploadUrl(ext);
           if ('error' in signed) {
             setUploadError(signed.error);
@@ -81,8 +85,8 @@ export function ProductForm({
           }
           const { error: upErr } = await supabase.storage
             .from(PRODUCT_IMAGE_BUCKET)
-            .uploadToSignedUrl(signed.path, signed.token, item.file, {
-              contentType: item.file.type,
+            .uploadToSignedUrl(signed.path, signed.token, photo, {
+              contentType: photo.type,
               // Each upload gets a fresh UUID filename, so the bytes at a given
               // URL never change — let Storage's CDN hold them for a year rather
               // than re-fetching the original on every resize.
