@@ -7,6 +7,7 @@ export interface DashboardOrder {
   subtotal: number;
   shipping: number;
   status: string;
+  fulfilmentMethod: 'delivery' | 'pickup';
   createdAt: string;
 }
 
@@ -46,7 +47,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase.from('reviews').select('*', head).eq('approved', false),
       supabase
         .from('orders')
-        .select('id, order_number, customer_name, subtotal, shipping, status, created_at')
+        .select('id, order_number, customer_name, subtotal, shipping, status, fulfilment_method, created_at')
         .order('created_at', { ascending: false })
         .limit(5),
     ]);
@@ -64,6 +65,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         subtotal: Number(o.subtotal),
         shipping: Number(o.shipping ?? 0),
         status: o.status,
+        fulfilmentMethod: o.fulfilment_method === 'pickup' ? 'pickup' : 'delivery',
         createdAt: o.created_at,
       })),
     };
