@@ -37,9 +37,14 @@ it. Bev asked for two things:
 - **Existing orders are manual-only.** The automatic job **ignores every order
   that existed at launch** (no surprise blast to past customers); it applies only
   to orders posted from launch onward. Bev uses the button for the backlog.
-- **Pickups are uniform with delivery.** The trigger is simply "marked posted +
-  5 days", whatever the fulfilment method. A pickup order only gets the automatic
-  email if Bev marks it posted when it's collected; otherwise she uses the button.
+- **Pickups are uniform with delivery — shown as "Collected".** For pickup
+  orders the terminal `posted` status is **displayed as "Collected"** in the admin
+  (the status dropdown, the order-card badge and the dashboard list); delivery
+  orders still show "Posted". It's a display-only relabel keyed off fulfilment
+  method — the stored status stays `posted`, so marking a pickup **Collected**
+  stamps `posted_at` and fires the review email 5 days later, exactly like a
+  posted delivery. No new status value, no migration. If Bev never marks a pickup
+  Collected, it simply doesn't get the automatic email (the button still covers it).
 - **Single daily cron at `0 9 * * *`** (09:00 UTC ≈ 9–10am UK). The plan allows
   one cron/day, so the review-invite run is folded into the existing keep-alive
   cron (moved from `0 6` to `0 9`).
