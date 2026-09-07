@@ -2,6 +2,9 @@
 
 _Date: 2026-08-24_
 
+> **Status: Shipped** — merged in PR #29 (2026-08-24); migration `0017` applied.
+> Built as designed (checkout-only enforcement).
+
 ## Problem
 
 One-of-a-kind items can be **oversold**. An item only flips to `sold_out` when a
