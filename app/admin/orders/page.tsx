@@ -96,7 +96,7 @@ export default async function AdminOrdersPage() {
                         className={`inline-flex items-center gap-1.5 font-body text-xs font-medium px-2.5 py-1 rounded border ${s.chip}`}
                       >
                         <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} aria-hidden="true" />
-                        {s.label}
+                        {o.status === 'posted' && o.fulfilmentMethod === 'pickup' ? 'Collected' : s.label}
                       </span>
                     </div>
                   </div>
@@ -175,7 +175,7 @@ export default async function AdminOrdersPage() {
                       <ReviewRequestButton orderId={o.id} sentAt={o.reviewInviteSentAt} />
                     )}
                     <div className="ml-auto">
-                      <OrderStatusControl id={o.id} status={o.status} />
+                      <OrderStatusControl id={o.id} status={o.status} fulfilmentMethod={o.fulfilmentMethod} />
                     </div>
                   </div>
                 </li>

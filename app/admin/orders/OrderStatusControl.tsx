@@ -11,7 +11,15 @@ const OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-export function OrderStatusControl({ id, status }: { id: string; status: OrderStatus }) {
+export function OrderStatusControl({
+  id,
+  status,
+  fulfilmentMethod,
+}: {
+  id: string;
+  status: OrderStatus;
+  fulfilmentMethod: 'delivery' | 'pickup';
+}) {
   const [pending, startTransition] = useTransition();
   // Controlled so a failed save can revert the visible selection — an
   // uncontrolled select would keep showing the unsaved status.
@@ -43,7 +51,7 @@ export function OrderStatusControl({ id, status }: { id: string; status: OrderSt
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {o.value === 'posted' && fulfilmentMethod === 'pickup' ? 'Collected' : o.label}
             </option>
           ))}
         </select>

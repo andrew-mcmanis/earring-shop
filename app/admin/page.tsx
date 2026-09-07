@@ -138,7 +138,7 @@ export default async function AdminPage() {
                     <span className="font-body text-sm text-ink flex-1 min-w-[8rem]">{o.customerName}</span>
                     <span className="font-body text-sm font-semibold text-ink tabular-nums">£{(o.subtotal + o.shipping).toFixed(2)}</span>
                     <span className="font-body text-xs font-medium capitalize bg-cream-dark border border-kraft-light text-ink-light px-2 py-0.5 rounded">
-                      {o.status}
+                      {o.status === 'posted' && o.fulfilmentMethod === 'pickup' ? 'collected' : o.status}
                     </span>
                     <span className="font-body text-xs text-ink-light">
                       {new Date(o.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
