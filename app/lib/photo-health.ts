@@ -20,11 +20,11 @@ import { SITE_URL } from './site';
  *  (a spent quota, a bad config, a deleted bucket) without a heavy daily job. */
 const SAMPLE_SIZE = 6;
 
-/** Delivery URLs a rendered page can legitimately reference. */
 /** This runs inside the daily cron, so every request is bounded — a hung
  *  fetch must not stall the keep-alive behind it. */
 const TIMEOUT_MS = 8000;
 
+/** Delivery URLs a rendered page can legitimately reference. */
 const IMAGE_URL_RE =
   /\/_next\/image\?url=[^"'\s,\\]+|https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/(?:object|render)\/[^"'\s,\\]+/gi;
 
