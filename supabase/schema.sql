@@ -42,6 +42,8 @@ create table if not exists products (
   visible          boolean not null default true,
   sold_out         boolean not null default false,
   sort_order       int not null default 0,
+  reserved_until   timestamptz,                       -- checkout hold; null = not held
+  reserved_by      text,                              -- opaque per-checkout token
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
@@ -89,6 +91,28 @@ grant insert, update, delete on categories, subcategories, colours, products to 
 
 -- Server-side (service role) full access — needed for server tasks (e.g. orders)
 grant all on categories, subcategories, colours, products to service_role;
+
+-- Atomic one-of-a-kind stock hold used by checkout (see migration 0017).
+create or replace function claim_product(p_id uuid, p_token text, p_minutes int)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_claimed boolean;
+begin
+  update products
+     set reserved_until = now() + make_interval(mins => p_minutes),
+         reserved_by = p_token
+   where id = p_id
+     and sold_out = false
+     and (reserved_until is null or reserved_until < now() or reserved_by = p_token)
+   returning true into v_claimed;
+  return coalesce(v_claimed, false);
+end;
+$$;
+grant execute on function claim_product(uuid, text, int) to service_role;
 -- Orders received from the storefront checkout.
 -- Run this once in the Supabase SQL editor.
 
