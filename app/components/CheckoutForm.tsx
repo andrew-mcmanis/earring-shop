@@ -58,6 +58,21 @@ function Field({
   );
 }
 
+// A stable per-checkout token so the buyer can re-claim/extend their own stock
+// hold across edit + retry. Persisted in sessionStorage; falls back to an
+// in-memory value if storage is blocked.
+function getOrCreateReservationToken(): string {
+  try {
+    const existing = sessionStorage.getItem('blg-reservation-token');
+    if (existing) return existing;
+    const token = crypto.randomUUID();
+    sessionStorage.setItem('blg-reservation-token', token);
+    return token;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
 export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: number; paymentEnabled: boolean }) {
   const { items, totalPrice, totalCount, clear, unavailableIds, refreshAvailability } = useCart();
   const router = useRouter();
@@ -74,6 +89,11 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
   const inPayment = Boolean(state.clientSecret) && !editing;
   const [method, setMethod] = useState<'delivery' | 'pickup'>('delivery');
   const [isGift, setIsGift] = useState(false);
+  // Set after mount so SSR and first client render agree (empty), then filled.
+  const [reservationToken, setReservationToken] = useState('');
+  useEffect(() => {
+    setReservationToken(getOrCreateReservationToken());
+  }, []);
 
   // Fallback success (no Stripe): behave like before — store + redirect.
   useEffect(() => {
@@ -142,6 +162,7 @@ export function CheckoutForm({ deliveryBase, paymentEnabled }: { deliveryBase: n
         <input type="hidden" name="fulfilment_method" value={method} />
         {/* Only a delivery order can be a gift; false otherwise so the server never stores stray recipient data. */}
         <input type="hidden" name="is_gift" value={method === 'delivery' && isGift ? 'true' : 'false'} />
+        <input type="hidden" name="reservation_token" value={reservationToken} />
 
         {state.status === 'error' && state.message && (
           <div
