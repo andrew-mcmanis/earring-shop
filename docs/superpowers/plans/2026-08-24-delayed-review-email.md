@@ -1,14 +1,16 @@
 # Delayed Review Email Implementation Plan
 
 > **Reconciled with what shipped.** This plan originally targeted a "5 days after
-> paid" trigger with two separate crons. The as-built feature differs in two ways
-> and the plan below reflects the shipped code: (1) the automatic trigger is
+> paid" trigger with two separate crons. The as-built feature differs in three
+> ways and the plan below reflects the shipped code: (1) the automatic trigger is
 > **5 days after an order is marked posted** (migration `0016` adds `posted_at`;
 > `updateOrderStatus` stamps it) — an interim paid-based version was built then
 > reverted per the owner's preference; (2) the Vercel plan allows one cron/day, so
 > the review-invite run is **folded into the existing keep-alive cron** (batch
 > logic in `app/lib/review-invites.ts`), with `/api/review-invites` kept as a
-> manual trigger.
+> manual trigger; and (3) a follow-on QoL relabel shows the `posted` status as
+> **"Collected"** for pickup orders in the admin (Task 7) — display-only, so the
+> `posted_at` trigger is unchanged.
 >
 > **For agentic workers:** the feature is already implemented and merged. This is
 > an as-built record, not an unstarted plan.
@@ -44,6 +46,8 @@
 | `app/admin/orders/ReviewRequestButton.tsx` | Create | Client button (send / re-send, shows sent state) |
 | `app/admin/orders/page.tsx` | Modify | Render the button on paid, non-cancelled orders |
 | `vercel.json` | Modify | Single daily cron `/api/keep-alive` at `0 9 * * *` |
+| `app/admin/orders/OrderStatusControl.tsx` | Modify | "Collected" label for pickups (Task 7) |
+| `app/admin/page.tsx` | Modify | Dashboard list: "Collected" + carry fulfilment method (Task 7) |
 
 ---
 
@@ -261,6 +265,24 @@ order card's action row:
 - [ ] Owner: apply migrations `0015` and `0016` in Supabase.
 - [ ] Manual: mark a test order posted, backdate its `posted_at` to >5 days ago, hit `/api/keep-alive` (or `/api/review-invites` with the `CRON_SECRET` bearer) → email sent + stamped; hit again → no re-send. Confirm an order that isn't posted, and a backlog order (`auto_review_invite=false`), are skipped. In Admin → Orders, the **Send review request** button sends on demand; the confirmation email no longer shows the review button.
 - [ ] Confirm the single cron shows at `0 9 * * *` in the Vercel dashboard.
+
+## Task 7: "Collected" status label for pickup orders (follow-on QoL)
+
+A display-only relabel: pickup orders show the terminal `posted` status as
+**"Collected"** in the admin. The stored status stays `posted`, so `posted_at`
+still stamps and the review email fires 5 days after collection — no migration,
+no cron change.
+
+- `app/admin/orders/OrderStatusControl.tsx` — takes a `fulfilmentMethod` prop;
+  the `posted` `<option>` renders "Collected" for pickups.
+- `app/admin/orders/page.tsx` — the status badge shows "Collected" for a pickup +
+  `posted`; passes `fulfilmentMethod` to the control.
+- `app/admin/queries.ts` — `DashboardOrder` gains `fulfilmentMethod`; the
+  latest-orders select + map carry `fulfilment_method`.
+- `app/admin/page.tsx` — the dashboard latest-orders badge shows "collected"
+  (CSS-capitalised) for a pickup + `posted`.
+
+- [ ] `tsc` + `npm run build` clean; commit.
 
 ## Out of scope (from the spec)
 
