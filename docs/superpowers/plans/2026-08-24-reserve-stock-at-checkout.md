@@ -1,5 +1,8 @@
 # Reserve Stock at Checkout Implementation Plan
 
+> **Status: Shipped** — implemented and merged in PR #29 (2026-08-24); migration
+> `0017` applied. This is now an as-built record; the task checkboxes below are done.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Prevent overselling one-of-a-kind items by claiming a short, self-expiring hold on each cart item at "Continue to payment", so a second buyer can't pay for the same piece.
