@@ -116,6 +116,7 @@ create table if not exists orders (
   paid_at        timestamptz,
   refunded_amount numeric(10,2),
   refunded_at    timestamptz,
+  posted_at      timestamptz,                    -- set when the order is first marked posted
   review_invite_sent_at timestamptz,             -- set when a review email is sent
   auto_review_invite boolean not null default true, -- automatic job may email this order
   created_at     timestamptz not null default now(),

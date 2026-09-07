@@ -21,6 +21,18 @@ export async function updateOrderStatus(
 
   const { error } = await supabase.from('orders').update({ status }).eq('id', id);
   if (error) return { error: `Could not update: ${error.message}` };
+
+  // Stamp when the order was first marked posted — the delayed review email keys
+  // off this. Only set it while still null, so re-marking posted doesn't reset
+  // the 5-day clock.
+  if (status === 'posted') {
+    await supabase
+      .from('orders')
+      .update({ posted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('posted_at', null);
+  }
+
   revalidatePath('/admin/orders');
   return {};
 }
