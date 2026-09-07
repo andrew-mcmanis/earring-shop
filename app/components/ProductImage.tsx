@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import { ProductIcon } from './ProductIcon';
 
@@ -26,7 +29,15 @@ export function ProductImage({
   iconClassName,
   priority = false,
 }: ProductImageProps) {
-  if (image) {
+  // A photo that fails to load falls back to the same placeholder used when a
+  // product has no photo at all. Without this the browser draws its broken-file
+  // icon, which is what shoppers saw when image delivery broke — a shop full of
+  // broken icons reads as "this site is broken", where the placeholder reads as
+  // "no photo yet". Tracking the failed src (rather than a boolean) means the
+  // gallery recovers when it moves to a different photo.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+
+  if (image && failedSrc !== image) {
     return (
       <Image
         src={image}
@@ -34,6 +45,7 @@ export function ProductImage({
         fill
         priority={priority}
         sizes={sizes}
+        onError={() => setFailedSrc(image)}
         className="object-cover transition-transform duration-300 group-hover:scale-105"
       />
     );

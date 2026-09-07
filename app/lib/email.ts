@@ -284,6 +284,41 @@ export async function sendOrderEmails(data: OrderEmailData): Promise<void> {
   }
 }
 
+/**
+ * Alert the owner that product photos have stopped loading on the live site.
+ * Best-effort: never throws — the daily cron must finish regardless.
+ */
+export async function sendPhotoHealthAlert(
+  checked: number,
+  failures: { url: string; status: number | string }[],
+): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM;
+  const ownerTo = process.env.OWNER_ORDER_EMAIL;
+  if (!apiKey || !from || !ownerTo) {
+    console.warn('[email] photo health alert skipped — RESEND/OWNER_ORDER_EMAIL not configured');
+    return;
+  }
+  const rows = failures
+    .map((f) => `<li style="margin:0 0 6px;"><code>${esc(String(f.status))}</code> &mdash; ${esc(f.url)}</li>`)
+    .join('');
+  try {
+    await new Resend(apiKey).emails.send({
+      from,
+      to: ownerTo,
+      subject: `Product photos are not loading on ${SITE_URL.replace(/^https?:\/\//, '')}`,
+      html: shell(
+        'Product photos are not loading',
+        'Heads up',
+        `${failures.length} of ${checked} sampled product photos failed to load on the live site. Shoppers are most likely seeing placeholders instead of photos.`,
+        `<ul style="margin:0;padding-left:18px;font-family:${SERIF};font-size:13px;color:${BODY};">${rows}</ul>`,
+      ),
+    });
+  } catch (e) {
+    console.error('[email] photo health alert failed', e);
+  }
+}
+
 export interface ReviewRequestData {
   reference: string;
   customerName: string;

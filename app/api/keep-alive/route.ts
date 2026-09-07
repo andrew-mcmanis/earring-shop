@@ -1,5 +1,7 @@
 import { isSupabaseConfigured, createReadClient } from '../../lib/supabase';
 import { sendDueReviewInvites } from '../../lib/review-invites';
+import { checkProductPhotos } from '../../lib/photo-health';
+import { sendPhotoHealthAlert } from '../../lib/email';
 
 // Keep the Supabase project active. Supabase's free tier pauses a project after
 // ~7 days without activity, which would knock the live shop back to placeholder
@@ -38,5 +40,20 @@ export async function GET(request: Request): Promise<Response> {
     console.error('[keep-alive] review invites run threw:', e);
   }
 
-  return Response.json({ ok: true, pinged: true, at: new Date().toISOString(), reviewInvites });
+  // Canary: confirm the live site's product photos still load, and email the
+  // owner if they don't. Image delivery has broken silently twice and both times
+  // it took a person noticing — this turns days of broken photos into one email.
+  // Best-effort, like the invites above: it must not fail the keep-alive.
+  let photos;
+  try {
+    photos = await checkProductPhotos();
+    if (photos && photos.failures.length > 0) {
+      console.error('[keep-alive] product photos failing:', photos.failures);
+      await sendPhotoHealthAlert(photos.checked, photos.failures);
+    }
+  } catch (e) {
+    console.error('[keep-alive] photo health check threw:', e);
+  }
+
+  return Response.json({ ok: true, pinged: true, at: new Date().toISOString(), reviewInvites, photos });
 }
