@@ -1,8 +1,8 @@
 import { createServiceClient } from './supabase';
 import { sendReviewRequestEmail } from './email';
 
-// Days after payment before the review email is sent. A once-daily cron, so it's
-// "at least this many days".
+// Days after an order is marked posted before the review email is sent. A
+// once-daily cron, so it's "at least this many days".
 const REVIEW_DELAY_DAYS = 5;
 
 interface EligibleOrder {
@@ -21,9 +21,9 @@ export interface ReviewInviteRun {
 }
 
 /**
- * Send the delayed review invite to every order that's due: paid >= N days ago,
- * eligible for the automatic job (auto_review_invite — excludes the pre-launch
- * backlog), not cancelled/refunded, not already sent. Stamps each on success so
+ * Send the delayed review invite to every order that's due: marked posted >= N
+ * days ago, eligible for the automatic job (auto_review_invite — excludes the
+ * pre-launch backlog), not cancelled/refunded, not already sent. Stamps each on success so
  * it never repeats. Shared by the daily cron (folded into /api/keep-alive) and
  * the /api/review-invites manual trigger. Never throws.
  */
@@ -42,7 +42,7 @@ export async function sendDueReviewInvites(): Promise<ReviewInviteRun> {
     .eq('auto_review_invite', true)      // excludes the pre-launch backlog
     .is('review_invite_sent_at', null)
     .neq('status', 'cancelled')
-    .lte('paid_at', cutoff)
+    .lte('posted_at', cutoff)            // 5 days after the order was marked posted
     .limit(50);
 
   if (error) {
