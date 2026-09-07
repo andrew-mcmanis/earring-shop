@@ -38,6 +38,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CHECKOUT_RATE_LIMIT = 10;
 const CHECKOUT_RATE_WINDOW_S = 300; // 5 minutes
 
+// One-of-a-kind stock: how long a checkout holds a piece while the buyer pays.
+// Self-expiring, so an abandoned checkout frees the item after this window.
+const RESERVATION_MINUTES = 15;
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+
 function str(formData: FormData, key: string): string {
   const v = formData.get(key);
   return typeof v === 'string' ? v.trim() : '';
@@ -79,6 +84,34 @@ async function isRateLimited(): Promise<boolean> {
   }
 }
 
+// Normalise the client's reservation token: a UUID, or a fresh server-minted one.
+function validReservationToken(raw: string): string {
+  return UUID_RE.test(raw) ? raw : crypto.randomUUID();
+}
+
+// Atomically reserve each product for this checkout token (a self-expiring hold),
+// so a concurrent buyer can't pay for the same one-of-a-kind piece. Returns the
+// product ids that could NOT be claimed (sold out, or held by someone else).
+// Fails OPEN on an RPC error (missing pre-migration / transient) so a claim
+// outage degrades to today's behaviour rather than blocking every sale.
+async function claimProducts(token: string, productIds: string[]): Promise<string[]> {
+  const svc = createServiceClient();
+  const failed: string[] = [];
+  for (const id of [...new Set(productIds)]) {
+    const { data, error } = await svc.rpc('claim_product', {
+      p_id: id,
+      p_token: token,
+      p_minutes: RESERVATION_MINUTES,
+    });
+    if (error) {
+      console.error('[order] claim_product failed (allowing) for', id, error.message);
+      continue; // fail open on infra error
+    }
+    if (data !== true) failed.push(id);
+  }
+  return failed;
+}
+
 export async function createOrderAndIntent(
   _prev: PlaceOrderState,
   formData: FormData,
@@ -102,6 +135,7 @@ export async function createOrderAndIntent(
   const recipientName = str(formData, 'recipient_name');
   // A gift is always a delivery — never honour it for pickup.
   const isGift = !isPickup && formData.get('is_gift') === 'true';
+  const reservationToken = validReservationToken(str(formData, 'reservation_token'));
 
   const fieldErrors: Record<string, string> = {};
   if (!name) fieldErrors.name = 'Please enter your name.';
@@ -165,6 +199,21 @@ export async function createOrderAndIntent(
   }
   if (items.length === 0) {
     return { status: 'error', message: 'Your basket is empty — add an item before checking out.' };
+  }
+
+  // Reserve the one-of-a-kind pieces for this checkout before creating the order
+  // or taking payment, so two buyers can't pay for the same item. Service-role
+  // only; the RPC self-expires the hold after RESERVATION_MINUTES.
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const unclaimed = await claimProducts(reservationToken, items.map((l) => l.productId));
+    if (unclaimed.length > 0) {
+      const names = [...new Set(items.filter((l) => unclaimed.includes(l.productId)).map((l) => l.name))];
+      const pronoun = names.length > 1 ? 'them' : 'it';
+      return {
+        status: 'error',
+        message: `Sorry, someone's just buying ${names.join(', ')} — please remove ${pronoun} from your basket to continue.`,
+      };
+    }
   }
 
   const subtotal = items.reduce((sum, l) => sum + l.unitPrice * l.quantity, 0);
