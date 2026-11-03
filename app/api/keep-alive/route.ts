@@ -12,12 +12,17 @@ import { sendPhotoHealthAlert } from '../../lib/email';
 // Route Handlers aren't cached by default, and this one reads headers + the DB,
 // so it always runs at request time.
 export async function GET(request: Request): Promise<Response> {
-  // If a CRON_SECRET is set, require it. Vercel sends it automatically as
-  // `Authorization: Bearer <CRON_SECRET>` on cron invocations, so setting that
-  // env var locks the endpoint down to the scheduler. Optional — the query below
-  // is harmless either way.
+  // Require the scheduler's secret. Vercel sends CRON_SECRET automatically as
+  // `Authorization: Bearer <CRON_SECRET>` on cron invocations. Not optional: this
+  // job also sends due review-invite emails and runs the photo check/alert below,
+  // so it fails closed — with no CRON_SECRET configured, every request is rejected.
+  const authorization = request.headers.get('authorization');
   const secret = process.env.CRON_SECRET;
-  if (secret && request.headers.get('authorization') !== `Bearer ${secret}`) {
+  if (!secret) {
+    console.error('[keep-alive] CRON_SECRET is not set; request rejected');
+    return Response.json({ ok: false, error: 'unauthorized' }, { status: 401 });
+  }
+  if (authorization !== `Bearer ${secret}`) {
     return Response.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
 
