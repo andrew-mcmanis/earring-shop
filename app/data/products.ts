@@ -14,6 +14,12 @@ import {
 } from './sample';
 import { isSupabaseConfigured, createReadClient } from '../lib/supabase';
 
+// The only product columns the anon and authenticated roles may read (the
+// database grants exactly these). Never use select('*') on products: the hold
+// columns are not readable, so '*' is denied as a whole.
+export const PRODUCT_COLUMNS =
+  'id, name, description, price, category_slug, subcategory_slug, colour_slug, accent_color, image_url, image_urls, visible, sold_out, sort_order';
+
 // Row shapes as returned by the database (snake_case).
 export interface ProductRow {
   id: string;
@@ -113,7 +119,7 @@ export async function getProducts(): Promise<Product[]> {
     const supabase = createReadClient();
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(PRODUCT_COLUMNS)
       .eq('visible', true)
       .order('sort_order');
     if (!error && data) {
@@ -129,7 +135,7 @@ export async function getProduct(id: string): Promise<Product | null> {
     const supabase = createReadClient();
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(PRODUCT_COLUMNS)
       .eq('id', id)
       .eq('visible', true)
       .maybeSingle();

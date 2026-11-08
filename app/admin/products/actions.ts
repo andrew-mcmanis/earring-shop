@@ -6,6 +6,7 @@ import { requireUser as requireUserOrThrow } from '../../lib/admin-auth';
 import { createServerSupabase } from '../../lib/supabase-server';
 import { createServiceClient } from '../../lib/supabase';
 import { MAX_PRODUCT_PHOTOS, PRODUCT_IMAGE_BUCKET } from '../../data/types';
+import { PRODUCT_COLUMNS } from '../../data/products';
 
 const BUCKET = PRODUCT_IMAGE_BUCKET;
 const STORAGE_PUBLIC_PREFIX = `/storage/v1/object/public/${BUCKET}/`;
@@ -214,7 +215,7 @@ export async function duplicateProduct(id: string): Promise<{ id?: string; error
 
   const { data: source, error: readError } = await supabase
     .from('products')
-    .select('*')
+    .select(PRODUCT_COLUMNS)
     .eq('id', id)
     .maybeSingle();
   if (readError || !source) {

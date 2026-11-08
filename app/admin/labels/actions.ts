@@ -79,7 +79,7 @@ export async function deleteCategory(slug: string): Promise<LabelResult> {
   const supabase = await requireUser();
   const { count } = await supabase
     .from('products')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('category_slug', slug);
   if ((count ?? 0) > 0) {
     return {

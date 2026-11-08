@@ -39,8 +39,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const supabase = await createServerSupabase();
     const head = { count: 'exact' as const, head: true };
     const [products, soldOut, newOrders, categories, colours, pendingReviews, latest] = await Promise.all([
-      supabase.from('products').select('*', head),
-      supabase.from('products').select('*', head).eq('sold_out', true),
+      supabase.from('products').select('id', head),
+      supabase.from('products').select('id', head).eq('sold_out', true),
       supabase.from('orders').select('*', head).eq('status', 'new'),
       supabase.from('categories').select('*', head),
       supabase.from('colours').select('*', head),

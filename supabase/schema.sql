@@ -83,8 +83,16 @@ create policy "admin write products"      on products      for all using (auth.r
 
 grant usage on schema public to anon, authenticated, service_role;
 
--- Public storefront can read labels + products
-grant select on categories, subcategories, colours, products to anon, authenticated;
+-- Public storefront can read labels + products. Products are column-granted:
+-- the checkout hold columns (reserved_until, reserved_by) and the timestamps are
+-- not readable by anon/authenticated (see migration 0022).
+grant select on categories, subcategories, colours to anon, authenticated;
+-- Supabase default privileges give anon/authenticated table-level SELECT on new
+-- tables, and a column grant does not override it, so remove it first.
+revoke select on products from public, anon, authenticated;
+grant select (id, name, description, price, category_slug, subcategory_slug,
+              colour_slug, accent_color, image_url, image_urls, visible,
+              sold_out, sort_order) on products to anon, authenticated;
 
 -- The signed-in owner (admin) can manage everything
 grant insert, update, delete on categories, subcategories, colours, products to authenticated;

@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers';
 import type { Product } from '../data/types';
-import { getProducts, mapProduct, type ProductRow } from '../data/products';
+import { getProducts, mapProduct, PRODUCT_COLUMNS, type ProductRow } from '../data/products';
 import { sampleDeliveryBase } from '../data/sample';
 import { computeShipping } from './shipping';
 import { flipProductsSoldOut } from './fulfilment';
@@ -157,7 +157,7 @@ export async function createOrderAndIntent(
   let catalogue: Product[];
   if (isSupabaseConfigured()) {
     const supabase = createReadClient();
-    const { data, error } = await supabase.from('products').select('*').eq('visible', true);
+    const { data, error } = await supabase.from('products').select(PRODUCT_COLUMNS).eq('visible', true);
     if (error || !data) {
       console.error('[order] catalogue read failed during checkout:', error?.message);
       return {
